@@ -1,0 +1,597 @@
+[
+  {
+    "name": "English (US)",
+    "code": "en_US",
+    "iso_code": "en",
+    "url_code": "en",
+    "active": true
+  },
+  {
+    "name": "Albanian/ Shqip",
+    "code": "sq_AL",
+    "iso_code": "sq",
+    "url_code": "sq",
+    "active": false
+  },
+  {
+    "name": "Amharic/ አምሃርኛ",
+    "code": "am_ET",
+    "iso_code": "am_ET",
+    "url_code": "am_ET",
+    "active": false
+  },
+  {
+    "name": "Arabic (Syria)/ الْعَرَبيّة",
+    "code": "ar_SY",
+    "iso_code": "ar_SY",
+    "url_code": "ar_SY",
+    "active": false
+  },
+  {
+    "name": "Arabic/ الْعَرَبيّة",
+    "code": "ar_001",
+    "iso_code": "ar",
+    "url_code": "ar",
+    "active": false
+  },
+  {
+    "name": "Basque/ Euskara",
+    "code": "eu_ES",
+    "iso_code": "eu_ES",
+    "url_code": "eu_ES",
+    "active": false
+  },
+  {
+    "name": "Bengali/ বাংলা",
+    "code": "bn_IN",
+    "iso_code": "bn_IN",
+    "url_code": "bn_IN",
+    "active": false
+  },
+  {
+    "name": "Bosnian/ bosanski jezik",
+    "code": "bs_BA",
+    "iso_code": "bs",
+    "url_code": "bs",
+    "active": false
+  },
+  {
+    "name": "Bulgarian/ български език",
+    "code": "bg_BG",
+    "iso_code": "bg",
+    "url_code": "bg",
+    "active": false
+  },
+  {
+    "name": "Burmese/ ဗမာစာ",
+    "code": "my_MM",
+    "iso_code": "my",
+    "url_code": "my",
+    "active": false
+  },
+  {
+    "name": "Catalan/ Català",
+    "code": "ca_ES",
+    "iso_code": "ca_ES",
+    "url_code": "ca_ES",
+    "active": false
+  },
+  {
+    "name": "Chinese (HK)",
+    "code": "zh_HK",
+    "iso_code": "zh_HK",
+    "url_code": "zh_HK",
+    "active": false
+  },
+  {
+    "name": "Chinese (Simplified)/ 简体中文",
+    "code": "zh_CN",
+    "iso_code": "zh_CN",
+    "url_code": "zh_CN",
+    "active": false
+  },
+  {
+    "name": "Chinese (Traditional)/ 正體字",
+    "code": "zh_TW",
+    "iso_code": "zh_TW",
+    "url_code": "zh_TW",
+    "active": false
+  },
+  {
+    "name": "Croatian/ hrvatski jezik",
+    "code": "hr_HR",
+    "iso_code": "hr",
+    "url_code": "hr",
+    "active": false
+  },
+  {
+    "name": "Czech/ Čeština",
+    "code": "cs_CZ",
+    "iso_code": "cs_CZ",
+    "url_code": "cs_CZ",
+    "active": false
+  },
+  {
+    "name": "Danish/ Dansk",
+    "code": "da_DK",
+    "iso_code": "da_DK",
+    "url_code": "da_DK",
+    "active": false
+  },
+  {
+    "name": "Dutch (BE)/ Nederlands (BE)",
+    "code": "nl_BE",
+    "iso_code": "nl_BE",
+    "url_code": "nl_BE",
+    "active": false
+  },
+  {
+    "name": "Dutch/ Nederlands",
+    "code": "nl_NL",
+    "iso_code": "nl",
+    "url_code": "nl",
+    "active": false
+  },
+  {
+    "name": "English (AU)",
+    "code": "en_AU",
+    "iso_code": "en_AU",
+    "url_code": "en_AU",
+    "active": false
+  },
+  {
+    "name": "English (CA)",
+    "code": "en_CA",
+    "iso_code": "en_CA",
+    "url_code": "en_CA",
+    "active": false
+  },
+  {
+    "name": "English (UK)",
+    "code": "en_GB",
+    "iso_code": "en_GB",
+    "url_code": "en_GB",
+    "active": false
+  },
+  {
+    "name": "Estonian/ Eesti keel",
+    "code": "et_EE",
+    "iso_code": "et",
+    "url_code": "et",
+    "active": false
+  },
+  {
+    "name": "Filipino",
+    "code": "fil_PH",
+    "iso_code": "fil",
+    "url_code": "fil",
+    "active": false
+  },
+  {
+    "name": "Finnish/ Suomi",
+    "code": "fi_FI",
+    "iso_code": "fi",
+    "url_code": "fi",
+    "active": false
+  },
+  {
+    "name": "French (BE)/ Français (BE)",
+    "code": "fr_BE",
+    "iso_code": "fr_BE",
+    "url_code": "fr_BE",
+    "active": false
+  },
+  {
+    "name": "French (CA)/ Français (CA)",
+    "code": "fr_CA",
+    "iso_code": "fr_CA",
+    "url_code": "fr_CA",
+    "active": false
+  },
+  {
+    "name": "French (CH)/ Français (CH)",
+    "code": "fr_CH",
+    "iso_code": "fr_CH",
+    "url_code": "fr_CH",
+    "active": false
+  },
+  {
+    "name": "French/ Français",
+    "code": "fr_FR",
+    "iso_code": "fr",
+    "url_code": "fr",
+    "active": false
+  },
+  {
+    "name": "Galician/ Galego",
+    "code": "gl_ES",
+    "iso_code": "gl",
+    "url_code": "gl",
+    "active": false
+  },
+  {
+    "name": "Georgian/ ქართული ენა",
+    "code": "ka_GE",
+    "iso_code": "ka",
+    "url_code": "ka",
+    "active": false
+  },
+  {
+    "name": "German (CH)/ Deutsch (CH)",
+    "code": "de_CH",
+    "iso_code": "de_CH",
+    "url_code": "de_CH",
+    "active": false
+  },
+  {
+    "name": "German/ Deutsch",
+    "code": "de_DE",
+    "iso_code": "de",
+    "url_code": "de",
+    "active": false
+  },
+  {
+    "name": "Greek/ Ελληνικά",
+    "code": "el_GR",
+    "iso_code": "el_GR",
+    "url_code": "el_GR",
+    "active": false
+  },
+  {
+    "name": "Gujarati/ ગુજરાતી",
+    "code": "gu_IN",
+    "iso_code": "gu",
+    "url_code": "gu",
+    "active": false
+  },
+  {
+    "name": "Hebrew/ עִבְרִי",
+    "code": "he_IL",
+    "iso_code": "he",
+    "url_code": "he",
+    "active": false
+  },
+  {
+    "name": "Hindi/ हिंदी",
+    "code": "hi_IN",
+    "iso_code": "hi",
+    "url_code": "hi",
+    "active": false
+  },
+  {
+    "name": "Hungarian/ Magyar",
+    "code": "hu_HU",
+    "iso_code": "hu",
+    "url_code": "hu",
+    "active": false
+  },
+  {
+    "name": "Indonesian/ Bahasa Indonesia",
+    "code": "id_ID",
+    "iso_code": "id",
+    "url_code": "id",
+    "active": false
+  },
+  {
+    "name": "Italian/ Italiano",
+    "code": "it_IT",
+    "iso_code": "it",
+    "url_code": "it",
+    "active": false
+  },
+  {
+    "name": "Japanese/ 日本語",
+    "code": "ja_JP",
+    "iso_code": "ja",
+    "url_code": "ja",
+    "active": false
+  },
+  {
+    "name": "Kabyle/ Taqbaylit",
+    "code": "kab_DZ",
+    "iso_code": "kab",
+    "url_code": "kab",
+    "active": false
+  },
+  {
+    "name": "Khmer/ ភាសាខ្មែរ",
+    "code": "km_KH",
+    "iso_code": "km",
+    "url_code": "km",
+    "active": false
+  },
+  {
+    "name": "Korean (KP)/ 한국어 (KP)",
+    "code": "ko_KP",
+    "iso_code": "ko_KP",
+    "url_code": "ko_KP",
+    "active": false
+  },
+  {
+    "name": "Korean (KR)/ 한국어 (KR)",
+    "code": "ko_KR",
+    "iso_code": "ko_KR",
+    "url_code": "ko_KR",
+    "active": false
+  },
+  {
+    "name": "Lao/ ພາສາລາວ",
+    "code": "lo_LA",
+    "iso_code": "lo",
+    "url_code": "lo",
+    "active": false
+  },
+  {
+    "name": "Latvian/ latviešu valoda",
+    "code": "lv_LV",
+    "iso_code": "lv",
+    "url_code": "lv",
+    "active": false
+  },
+  {
+    "name": "Lithuanian/ Lietuvių kalba",
+    "code": "lt_LT",
+    "iso_code": "lt",
+    "url_code": "lt",
+    "active": false
+  },
+  {
+    "name": "Luxembourgish",
+    "code": "lb_LU",
+    "iso_code": "lb",
+    "url_code": "lb",
+    "active": false
+  },
+  {
+    "name": "Macedonian/ македонски јазик",
+    "code": "mk_MK",
+    "iso_code": "mk",
+    "url_code": "mk",
+    "active": false
+  },
+  {
+    "name": "Mongolian/ монгол",
+    "code": "mn_MN",
+    "iso_code": "mn",
+    "url_code": "mn",
+    "active": false
+  },
+  {
+    "name": "Norwegian Bokmål/ Norsk bokmål",
+    "code": "nb_NO",
+    "iso_code": "nb_NO",
+    "url_code": "nb_NO",
+    "active": false
+  },
+  {
+    "name": "Persian/ فارس",
+    "code": "fa_IR",
+    "iso_code": "fa",
+    "url_code": "fa",
+    "active": false
+  },
+  {
+    "name": "Polish/ Język polski",
+    "code": "pl_PL",
+    "iso_code": "pl",
+    "url_code": "pl",
+    "active": false
+  },
+  {
+    "name": "Portuguese (AO)/ Português (AO)",
+    "code": "pt_AO",
+    "iso_code": "pt_AO",
+    "url_code": "pt_AO",
+    "active": false
+  },
+  {
+    "name": "Portuguese (BR)/ Português (BR)",
+    "code": "pt_BR",
+    "iso_code": "pt_BR",
+    "url_code": "pt_BR",
+    "active": false
+  },
+  {
+    "name": "Portuguese/ Português",
+    "code": "pt_PT",
+    "iso_code": "pt",
+    "url_code": "pt",
+    "active": false
+  },
+  {
+    "name": "Romanian/ română",
+    "code": "ro_RO",
+    "iso_code": "ro",
+    "url_code": "ro",
+    "active": false
+  },
+  {
+    "name": "Russian/ русский язык",
+    "code": "ru_RU",
+    "iso_code": "ru",
+    "url_code": "ru",
+    "active": false
+  },
+  {
+    "name": "Serbian (Cyrillic)/ српски",
+    "code": "sr_RS",
+    "iso_code": "sr_RS",
+    "url_code": "sr_RS",
+    "active": false
+  },
+  {
+    "name": "Serbian (Latin)/ srpski",
+    "code": "sr@latin",
+    "iso_code": "sr@latin",
+    "url_code": "sr@latin",
+    "active": false
+  },
+  {
+    "name": "Slovak/ Slovenský jazyk",
+    "code": "sk_SK",
+    "iso_code": "sk",
+    "url_code": "sk",
+    "active": false
+  },
+  {
+    "name": "Slovenian/ slovenščina",
+    "code": "sl_SI",
+    "iso_code": "sl",
+    "url_code": "sl",
+    "active": false
+  },
+  {
+    "name": "Spanish (AR)/ Español (AR)",
+    "code": "es_AR",
+    "iso_code": "es_AR",
+    "url_code": "es_AR",
+    "active": false
+  },
+  {
+    "name": "Spanish (BO)/ Español (BO)",
+    "code": "es_BO",
+    "iso_code": "es_BO",
+    "url_code": "es_BO",
+    "active": false
+  },
+  {
+    "name": "Spanish (CL)/ Español (CL)",
+    "code": "es_CL",
+    "iso_code": "es_CL",
+    "url_code": "es_CL",
+    "active": false
+  },
+  {
+    "name": "Spanish (CO)/ Español (CO)",
+    "code": "es_CO",
+    "iso_code": "es_CO",
+    "url_code": "es_CO",
+    "active": false
+  },
+  {
+    "name": "Spanish (CR)/ Español (CR)",
+    "code": "es_CR",
+    "iso_code": "es_CR",
+    "url_code": "es_CR",
+    "active": false
+  },
+  {
+    "name": "Spanish (DO)/ Español (DO)",
+    "code": "es_DO",
+    "iso_code": "es_DO",
+    "url_code": "es_DO",
+    "active": false
+  },
+  {
+    "name": "Spanish (EC)/ Español (EC)",
+    "code": "es_EC",
+    "iso_code": "es_EC",
+    "url_code": "es_EC",
+    "active": false
+  },
+  {
+    "name": "Spanish (GT)/ Español (GT)",
+    "code": "es_GT",
+    "iso_code": "es_GT",
+    "url_code": "es_GT",
+    "active": false
+  },
+  {
+    "name": "Spanish (MX)/ Español (MX)",
+    "code": "es_MX",
+    "iso_code": "es_MX",
+    "url_code": "es_MX",
+    "active": false
+  },
+  {
+    "name": "Spanish (PA)/ Español (PA)",
+    "code": "es_PA",
+    "iso_code": "es_PA",
+    "url_code": "es_PA",
+    "active": false
+  },
+  {
+    "name": "Spanish (PE)/ Español (PE)",
+    "code": "es_PE",
+    "iso_code": "es_PE",
+    "url_code": "es_PE",
+    "active": false
+  },
+  {
+    "name": "Spanish (PY)/ Español (PY)",
+    "code": "es_PY",
+    "iso_code": "es_PY",
+    "url_code": "es_PY",
+    "active": false
+  },
+  {
+    "name": "Spanish (UY)/ Español (UY)",
+    "code": "es_UY",
+    "iso_code": "es_UY",
+    "url_code": "es_UY",
+    "active": false
+  },
+  {
+    "name": "Spanish (VE)/ Español (VE)",
+    "code": "es_VE",
+    "iso_code": "es_VE",
+    "url_code": "es_VE",
+    "active": false
+  },
+  {
+    "name": "Spanish/ Español",
+    "code": "es_ES",
+    "iso_code": "es",
+    "url_code": "es",
+    "active": false
+  },
+  {
+    "name": "Swedish/ Svenska",
+    "code": "sv_SE",
+    "iso_code": "sv",
+    "url_code": "sv",
+    "active": false
+  },
+  {
+    "name": "Tagalog/ Filipino",
+    "code": "tl_PH",
+    "iso_code": "tl",
+    "url_code": "tl",
+    "active": false
+  },
+  {
+    "name": "Telugu/ తెలుగు",
+    "code": "te_IN",
+    "iso_code": "te",
+    "url_code": "te",
+    "active": false
+  },
+  {
+    "name": "Thai/ ภาษาไทย",
+    "code": "th_TH",
+    "iso_code": "th",
+    "url_code": "th",
+    "active": false
+  },
+  {
+    "name": "Turkish/ Türkçe",
+    "code": "tr_TR",
+    "iso_code": "tr",
+    "url_code": "tr",
+    "active": false
+  },
+  {
+    "name": "Ukrainian/ українська",
+    "code": "uk_UA",
+    "iso_code": "uk",
+    "url_code": "uk",
+    "active": false
+  },
+  {
+    "name": "Vietnamese/ Tiếng Việt",
+    "code": "vi_VN",
+    "iso_code": "vi",
+    "url_code": "vi",
+    "active": false
+  }
+]

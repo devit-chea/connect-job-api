@@ -1,0 +1,98 @@
+[
+  {
+    "name": "Dashboard",
+    "codename": "recruiter_dashboard",
+    "description": "",
+    "type": "menu",
+    "custom_type": [],
+    "group": "recruiter",
+    "children": []
+  },
+  {
+    "name": "Recruiter",
+    "codename": "recruiter_recruiter",
+    "description": "",
+    "type": "menu",
+    "custom_type": [],
+    "group": "recruiter",
+    "children": []
+  },
+  {
+    "name": "My Job Post",
+    "codename": "recruiter_my_job_post",
+    "description": "",
+    "type": "menu",
+    "custom_type": [],
+    "group": "recruiter",
+    "children": [
+      {
+        "name": "Manage Job Post",
+        "codename": "recruiter_manage_job_post",
+        "type": "permission",
+        "group": "recruiter"
+      },
+      {
+        "name": "Manage Job Post Pipeline",
+        "codename": "recruiter_manage_job_post_pipeline",
+        "type": "permission",
+        "group": "recruiter"
+      },
+      {
+        "name": "Manage Job Pipeline Status Config",
+        "codename": "recruiter_manage_job_pipeline_status_config",
+        "type": "permission",
+        "group": "recruiter"
+      },
+      {
+        "name": "Manage Job Post Question Template",
+        "codename": "recruiter_manage_job_post_question_template",
+        "type": "permission",
+        "group": "recruiter"
+      }
+    ]
+  },
+  {
+    "name": "Applicant",
+    "codename": "recruiter_applicant",
+    "description": "",
+    "type": "menu",
+    "custom_type": [],
+    "group": "recruiter",
+    "children": []
+  },
+  {
+    "name": "Company",
+    "codename": "recruiter_company",
+    "description": "",
+    "type": "menu",
+    "custom_type": [],
+    "group": "recruiter",
+    "children": []
+  },
+  {
+    "name": "Profile",
+    "codename": "recruiter_profile",
+    "description": "",
+    "type": "menu",
+    "custom_type": [],
+    "group": "recruiter",
+    "children": [
+      {
+        "name": "Recruiter Manage profile",
+        "codename": "recruiter_manage_profile",
+        "description": "Recruiter manage profile.",
+        "type": "permission",
+        "group": "recruiter"
+      }
+    ]
+  },
+  {
+    "name": "Mail Template Config",
+    "codename": "recruiter_mail_template",
+    "description": "",
+    "type": "menu",
+    "custom_type": [],
+    "group": "recruiter",
+    "children": []
+  }
+]

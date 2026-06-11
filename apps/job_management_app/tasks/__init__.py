@@ -1,0 +1,1 @@
+from apps.job_management_app.tasks.job_post_schedule_task import publish_scheduled_job_post

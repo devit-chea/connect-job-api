@@ -1,0 +1,63 @@
+django==5.1.6
+cryptography==44.0.0
+djangorestframework==3.15.2
+djangorestframework-simplejwt==5.4.0
+django-cors-headers==4.6.0
+django-celery-beat==2.7.0
+django_celery_results==2.6.0
+django-extra-fields==3.0.2
+drf-writable-nested==0.7.1
+drf-spectacular==0.28.0
+psycopg[binary]==3.2.4
+environs[django]==14.1.1
+requests==2.32.3
+pydash==8.0.4
+django-imagekit==5.0.0
+python-magic-bin; sys_platform == 'win32' 
+python-magic; sys_platform != 'win32'
+django_rest_passwordreset
+pyotp==2.9.0
+django-user-agents
+ldap3
+django-allauth 
+dj-rest-auth
+PyYAML 
+python-dotenv
+phonenumbers==9.0.2
+httpx==0.28.1
+beautifulsoup4==4.14.3
+prompt-toolkit==3.0.48
+click-repl==0.3.0
+httpcore==1.0.9
+
+# Socail Auth
+drf_social_oauth2==3.1.0 # for web auth
+google-auth==2.29.0 # for app auth
+celery[redis]==5.6.3
+django-filter==25.1
+wdg-notification==1.1.0
+boto3==1.43.24
+botocore==1.43.24 
+django-storages==1.14.6
+wdg-core-file-storage==0.19.12
+
+# Elasticsearch + DSL (Python client)
+elasticsearch==7.17.9
+elasticsearch-dsl==7.4.0
+
+# Django + Elasticsearch integration
+django-elasticsearch-dsl==7.3
+django-elasticsearch-dsl-drf==0.21.0
+
+wdg-storages==1.0.0
+
+altcha==0.2.0
+django-structlog==10.0.0
+
+# Django Cache
+django-redis==6.0.0
+
+python-jose[cryptography]==3.5.0
+
+django-auditlog==2.3.0
+whitenoise==6.12.0

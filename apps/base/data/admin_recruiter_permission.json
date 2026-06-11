@@ -1,0 +1,109 @@
+[
+  {
+    "name": "Dashboard",
+    "codename": "admin_recruiter_dashboard",
+    "description": "",
+    "type": "menu",
+    "custom_type": [],
+    "group": "admin_recruiter",
+    "children": []
+  },
+  {
+    "name": "Recruiter",
+    "codename": "admin_recruiter_recruiter",
+    "description": "",
+    "type": "menu",
+    "custom_type": [],
+    "group": "admin_recruiter",
+    "children": []
+  },
+  {
+    "name": "Job Post",
+    "codename": "admin_recruiter_job_post",
+    "description": "",
+    "type": "menu",
+    "custom_type": [],
+    "group": "admin_recruiter",
+    "children": [
+      {
+        "name": "Manage Job Post",
+        "codename": "admin_recruiter_manage_job_post",
+        "type": "permission",
+        "group": "admin_recruiter"
+      },
+      {
+        "name": "Manage Job Post Pipeline",
+        "codename": "admin_recruiter_manage_job_post_pipeline",
+        "type": "permission",
+        "group": "admin_recruiter"
+      },
+      {
+        "name": "Manage Job Pipeline Status Config",
+        "codename": "admin_recruiter_manage_job_pipeline_status_config",
+        "type": "permission",
+        "group": "admin_recruiter"
+      },
+      {
+        "name": "Manage Job Post Question Template",
+        "codename": "admin_recruiter_manage_job_post_question_template",
+        "type": "permission",
+        "group": "admin_recruiter"
+      }
+    ]
+  },
+  {
+    "name": "Applicant",
+    "codename": "admin_recruiter_applicant",
+    "description": "",
+    "type": "menu",
+    "custom_type": [],
+    "group": "admin_recruiter",
+    "children": []
+  },
+  {
+    "name": "Company",
+    "codename": "admin_recruiter_company",
+    "description": "",
+    "type": "menu",
+    "custom_type": [],
+    "group": "admin_recruiter",
+    "children": []
+  },
+  {
+    "name": "Profile",
+    "codename": "admin_recruiter_profile",
+    "description": "",
+    "type": "menu",
+    "custom_type": [],
+    "group": "admin_recruiter",
+    "children": [
+      {
+        "name": "Admin Recruiter Manage profile",
+        "codename": "admin_recruiter_manage_profile",
+        "description": "Admin Recruiter manage profile.",
+        "type": "permission",
+        "group": "admin_recruiter"
+      }
+    ]
+  },
+  {
+    "name": "User Management",
+    "codename": "admin_recruiter_user_management",
+    "type": "menu",
+    "group": "admin_recruiter",
+    "children": [
+      {
+        "name": "Manage User",
+        "codename": "admin_recruiter_manage_user",
+        "type": "permission",
+        "group": "admin_recruiter"
+      },
+      {
+        "name": "Manage Role",
+        "codename": "admin_recruiter_manage_role",
+        "type": "permission",
+        "group": "admin_recruiter"
+      }
+    ]
+  }
+]

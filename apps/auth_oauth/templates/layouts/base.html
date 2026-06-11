@@ -1,0 +1,40 @@
+{% load i18n %}
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml"
+      xmlns:o="urn:schemas-microsoft-com:office:office">
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>
+            {% block head_title %}
+            {% endblock head_title %}
+        </title>
+        {% block extra_head %}
+        {% endblock extra_head %}
+        
+        <style>
+            @media only screen and (min-width: 600px) {
+                body {
+                    margin: auto;
+                    width: 60%;
+                }
+            }
+        </style>
+    </head>
+
+    {% block body %}
+        <div style="margin:0; padding-bottom: 20px;">
+            <table style="width:100%;">
+                <tbody width="100%" style="vertical-align:top; background-color:#f8fafa; border-radius:10px;">
+                    <tr>
+                        <td style="padding: 20px;"> {% block content %}{% endblock content %}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    {% endblock body %}
+    {% block extra_body %}
+    {% endblock extra_body %}
+</html>

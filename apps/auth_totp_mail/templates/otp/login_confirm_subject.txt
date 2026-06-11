@@ -1,0 +1,1 @@
+Connect Job — Your verification code is {{otp}}

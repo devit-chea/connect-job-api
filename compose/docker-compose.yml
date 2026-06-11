@@ -1,0 +1,47 @@
+services:
+  job-platform-api:
+    image: job-platform-api:latest
+    build:
+      context: ../.
+      dockerfile: Dockerfile
+      args:
+        - DJANGO_ENV=${DJANGO_ENV}
+      secrets:
+        - pip_conf
+    env_file:
+      - ./.env
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+      - /var/log/services:/app/logs
+    ports:
+      - "${EXPOSE_PORT:-8000}:8000"
+    depends_on:
+      - db
+
+  job-platform-celery:
+    image: job-platform-celery:latest
+    container_name: "job-platform-celery"
+    pull_policy: always
+    entrypoint: /bin/bash
+    command: -c "celery -A config worker -l info --pool=threads --concurrency=${CELERY_CONCURRENCY:-2}"
+    depends_on:
+      - job-platform-api
+      - db
+    env_file:
+      - ../.env
+
+  db:
+    image: bitnami/postgresql:14
+    environment:
+      POSTGRES_USER: your_username
+      POSTGRES_PASSWORD: your_password
+      POSTGRES_DB: your_database
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+volumes:
+  pg_data:
+
+secrets:
+  pip_conf:
+    file: ./secrets/pip.conf

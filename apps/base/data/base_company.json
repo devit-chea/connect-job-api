@@ -1,0 +1,6 @@
+{
+    "name":"Wing career",
+    "code":"DEFAULT", 
+    "description":"default company",
+    "is_active": true
+}

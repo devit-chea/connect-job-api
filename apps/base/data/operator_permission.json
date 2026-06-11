@@ -1,0 +1,151 @@
+[
+  {
+    "name": "Dashboard",
+    "codename": "operator_dashboard",
+    "description": "",
+    "type": "menu",
+    "custom_type": [],
+    "group": "operator",
+    "children": []
+  },
+  {
+    "name": "All Request",
+    "codename": "operator_all_request",
+    "description": "",
+    "type": "menu",
+    "custom_type": [],
+    "group": "operator",
+    "children": [
+      {
+        "name": "Operator Manage Request",
+        "codename": "operator_manage_request",
+        "description": "Operator manage all request.",
+        "type": "permission",
+        "group": "operator"
+      },
+      {
+        "name": "Operator Manage Request Approval",
+        "codename": "operator_manage_request_approval",
+        "description": "Operator manage all request approval.",
+        "type": "permission",
+        "group": "operator"
+      }
+    ]
+  },
+  {
+    "name": "Recruiter Management",
+    "codename": "operator_recruiter_management",
+    "description": "",
+    "type": "menu",
+    "custom_type": [],
+    "group": "operator",
+    "children": [
+      {
+        "name": "Operator Manage Recruiter",
+        "codename": "operator_manage_recruiter",
+        "description": "Operator manage recruiter.",
+        "type": "permission",
+        "group": "operator"
+      }
+    ]
+  },
+  {
+    "name": "User Management",
+    "codename": "operator_user_management",
+    "description": "",
+    "type": "menu",
+    "custom_type": [],
+    "group": "operator",
+    "children": [
+      {
+        "name": "Operator Manage User",
+        "codename": "operator_manage_user",
+        "description": "Operator manage user.",
+        "type": "permission",
+        "group": "operator"
+      },
+      {
+        "name": "Operator Manage Role",
+        "codename": "operator_manage_role",
+        "description": "Operator manage role.",
+        "type": "permission",
+        "group": "operator"
+      }
+    ]
+  },
+  {
+    "name": "Company Management",
+    "codename": "operator_company_management",
+    "description": "",
+    "type": "menu",
+    "custom_type": [],
+    "group": "operator",
+    "children": [
+      {
+        "name": "Operator Manage Company",
+        "codename": "operator_manage_company",
+        "description": "Operator manage company.",
+        "type": "permission",
+        "group": "operator"
+      }
+    ]
+  },
+  {
+    "name": "Job Management",
+    "codename": "operator_job_management_config",
+    "description": "",
+    "type": "menu",
+    "custom_type": [],
+    "group": "operator",
+    "children": [
+      {
+        "name": "Manage Job Post",
+        "codename": "operator_manage_job_post",
+        "type": "permission",
+        "group": "operator"
+      },
+      {
+        "name": "Operator Manage Job Config",
+        "codename": "operator_manage_job_config",
+        "description": "Operator manage job configuration.",
+        "type": "permission",
+        "group": "operator"
+      },
+      {
+        "name": "Operator Manage Job Post Pipeline",
+        "codename": "operator_manage_job_post_pipeline",
+        "type": "permission",
+        "group": "operator"
+      },
+      {
+        "name": "Operator Manage Job Pipeline Status Config",
+        "codename": "operator_manage_job_pipeline_status_config",
+        "type": "permission",
+        "group": "operator"
+      },
+      {
+        "name": "Operator Manage Job Post Question Template",
+        "codename": "operator_manage_job_post_question_template",
+        "type": "permission",
+        "group": "operator"
+      }
+    ]
+  },
+  {
+    "name": "Operator Profile",
+    "codename": "operator_profile",
+    "description": "",
+    "type": "menu",
+    "custom_type": [],
+    "group": "operator",
+    "children": [
+      {
+        "name": "Operator Manage Profile",
+        "codename": "operator_manage_profile",
+        "description": "Operator Manage Profile.",
+        "type": "permission",
+        "group": "operator"
+      }
+    ]
+  }
+]

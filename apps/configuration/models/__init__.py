@@ -1,0 +1,1 @@
+from . import job_question_template_config_model

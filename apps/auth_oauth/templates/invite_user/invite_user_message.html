@@ -1,0 +1,81 @@
+{% extends "../base_entrance.html" %}
+{% load i18n %}
+{% load baseauths %}
+
+{% block head_title %}
+    {% translate "Your temporary account password for Connect Job." %}
+{% endblock head_title %}
+
+{% block content %}
+    {% element img src=logo_transparency style="width: 110px; height:auto" alt="Connect Job" %} {% endelement %}
+    {% element br %}{% endelement %}
+
+    {% element p %}
+        Dear <strong>{{ first_name|capfirst }}</strong>,
+    {% endelement %}
+
+    {% element br %}{% endelement %}
+    
+    {% element p %}
+        Welcome to Connect Job Platform! Your new account is ready.
+    {% endelement %}
+
+    {% element br %}{% endelement %}
+    
+    {% element p %}
+        Please log in using your temporary account details below:
+    {% endelement %}
+
+    {% element br %}{% endelement %}
+    
+    {# Fixed: Removed wrapping paragraph tag around the list #}
+    <ul>
+        <li style="margin-bottom: 8px;">
+            <strong>Platform: </strong> 
+            <a href="{{ login_url|default:'https://connectjob.connectkh.com/en/auth/sign-in?type=sign-in' }}" style="color: #3870e0; font-weight: bold; text-decoration: underline;">Login to Connect Job</a>
+        </li>
+        <li style="margin-bottom: 8px;">
+            <strong>Username: </strong> 
+            <span>{{ username }}</span>
+        </li>
+        <li style="margin-bottom: 8px;">
+            <strong>Password: </strong> 
+            <span style="font-family: monospace; background-color: #f4f4f4; padding: 2px 6px; border-radius: 4px;">{{ default_password }}</span>
+        </li>
+    </ul>
+    
+    {% element br %}{% endelement %}
+    
+    {% element p %}
+        <strong>Next Steps:</strong>
+    {% endelement %}
+
+    {% element br %}{% endelement %}
+    
+    {# Fixed: Removed wrapping paragraph tag around the ordered list #}
+    <ol>
+        <li style="margin-bottom: 6px;">Click on "Login to Connect Job" above.</li>
+        <li style="margin-bottom: 6px;">Enter your login details.</li>
+        <li style="margin-bottom: 6px;">Choose a permanent password immediately.</li>
+    </ol>
+
+    {% element br %}{% endelement %}
+    
+    {% element p %}
+        If you're having trouble signing in, please visit the 
+        <a href="{{ contact_us_url|default:'https://connectjob.connectkh.com/en/contact-us' }}" style="color: #3870e0; font-weight: bold; text-decoration: underline;">Connect Job Help Center</a>.
+    {% endelement %}
+
+    {% element br %}{% endelement %}
+    
+    {% element p %}
+        Thanks for using Connect Job!
+    {% endelement %}
+    
+    {% element br %}{% endelement %}
+    
+    {% element p %}
+        <strong>The Connect Job Team</strong>
+    {% endelement %}
+
+{% endblock content %}

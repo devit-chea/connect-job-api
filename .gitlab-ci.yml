@@ -1,0 +1,4 @@
+include:
+  - project: wing-erp/devops/gitops/gitlab-ci-template
+    ref: main
+    file: build-backend.yml 

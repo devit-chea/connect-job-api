@@ -1,0 +1,64 @@
+[
+    {
+        "name": "Dashboard",
+        "codename": "applicant_Dashboard",
+        "description": "",
+        "type": "menu",
+        "custom_type": [],
+        "group": "applicant",
+        "children": []
+    },
+    {
+        "name": "My Cv",
+        "codename": "applicant_cv",
+        "description": "",
+        "type": "menu",
+        "custom_type": [],
+        "group": "applicant",
+        "children": []
+    },
+    {
+        "name": "Saved Job",
+        "codename": "applicant_saved_job",
+        "description": "",
+        "type": "menu",
+        "custom_type": [],
+        "group": "applicant",
+        "children": []
+    },
+    {
+        "name": "Profile",
+        "codename": "applicant_profile",
+        "description": "",
+        "type": "menu",
+        "custom_type": [],
+        "group": "applicant",
+        "children": [
+            {
+                "name": "Applicant Manage profile",
+                "codename": "applicant_manage_profile",
+                "description": "Applicant manage profile.",
+                "type": "permission",
+                "group": "applicant"
+            }
+        ]
+    },
+    {
+        "name": "Job Preference",
+        "codename": "applicant_job_preference",
+        "description": "",
+        "type": "menu",
+        "custom_type": [],
+        "group": "applicant",
+        "children": []
+    },
+    {
+        "name": "Setting and Privacy",
+        "codename": "applicant_setting_and_privacy",
+        "description": "",
+        "type": "menu",
+        "custom_type": [],
+        "group": "applicant",
+        "children": []
+    }
+]

@@ -1,0 +1,279 @@
+
+services:
+
+  redis-master:
+    image: redis:latest
+    container_name: redis-master
+    hostname: redis-master
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/master:/data
+      - ./tls:/tls:ro
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    command:
+      [
+        "redis-server",
+        "--appendonly","yes",
+        "--repl-diskless-load","on-empty-db",
+        "--replica-announce-ip","${HOST_IP}",
+        "--replica-announce-port","6379",
+        "--protected-mode","no",
+        # --- auth additions ---
+        "--requirepass","${REDIS_PASSWORD}",
+        "--masterauth","${REDIS_PASSWORD}",
+        # --- SSL ---
+        "--tls-port", "6379",
+        "--port", "0",                          # disable non-TLS port
+        "--tls-cert-file", "/tls/redis.crt",
+        "--tls-key-file", "/tls/redis.key",
+        "--tls-ca-cert-file", "/tls/ca.crt",
+        "--tls-auth-clients", "yes",            # require client cert (mTLS)
+        "--tls-replication", "yes"             # TLS between master/replica
+      ]
+    networks:
+      redis-net:
+        ipv4_address: 172.21.0.3
+
+  redis-slave-1:
+    image: redis:latest
+    container_name: redis-slave-1
+    hostname: redis-slave-1
+    depends_on:
+      - redis-master
+    ports:
+      - "6380:6379"
+    volumes:
+      - ./data/slave1:/data
+      - ./tls:/tls:ro
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    command:
+      [
+        "redis-server",
+        "--appendonly","yes",
+        "--replicaof","redis-master","6379",
+        "--repl-diskless-load","on-empty-db",
+        "--replica-announce-ip","${HOST_IP}",
+        "--replica-announce-port","6380",
+        "--protected-mode","no",
+        # --- auth additions ---
+        "--requirepass","${REDIS_PASSWORD}",
+        "--masterauth","${REDIS_PASSWORD}",
+        # --- SSL ---
+        "--tls-port", "6379",
+        "--port", "0",
+        "--tls-cert-file", "/tls/redis.crt",
+        "--tls-key-file", "/tls/redis.key",
+        "--tls-ca-cert-file", "/tls/ca.crt",
+        "--tls-auth-clients", "yes",
+        "--tls-replication", "yes"
+      ]
+    networks:
+      redis-net:
+        ipv4_address: 172.21.0.4
+
+  redis-slave-2:
+    image: redis:latest
+    container_name: redis-slave-2
+    hostname: redis-slave-2
+    depends_on:
+      - redis-master
+    ports:
+      - "6381:6379"
+    volumes:
+      - ./data/slave2:/data
+      - ./tls:/tls:ro
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    command:
+      [
+        "redis-server",
+        "--appendonly","yes",
+        "--replicaof","redis-master","6379",
+        "--repl-diskless-load","on-empty-db",
+        "--replica-announce-ip","${HOST_IP}",
+        "--replica-announce-port","6381",
+        "--protected-mode","no",
+        # --- auth additions ---
+        "--requirepass","${REDIS_PASSWORD}",
+        "--masterauth","${REDIS_PASSWORD}",
+        # --- SSL ---
+        "--tls-port", "6379",
+        "--port", "0",
+        "--tls-cert-file", "/tls/redis.crt",
+        "--tls-key-file", "/tls/redis.key",
+        "--tls-ca-cert-file", "/tls/ca.crt",
+        "--tls-auth-clients", "yes",
+        "--tls-replication", "yes"
+      ]
+    networks:
+      redis-net:
+        ipv4_address: 172.21.0.5
+
+  sentinel-1:
+    image: redis:latest
+    container_name: sentinel-1
+    hostname: sentinel-1
+    depends_on:
+      - redis-master
+    ports:
+      - "26379:26379"
+    environment:
+      - HOST_IP=${HOST_IP:-192.168.1.2}
+      - HOST_LAN_IP=${HOST_LAN_IP:-192.168.1.2}          # or set your actual IP
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - SENTINEL_PASSWORD=${SENTINEL_PASSWORD}
+    volumes:
+      - ./tls:/tls:ro
+    command: >
+      sh -c 'echo "bind 0.0.0.0" > /etc/sentinel.conf &&
+             echo "port 0" >> /etc/sentinel.conf &&
+             echo "tls-port 26379" >> /etc/sentinel.conf &&
+             echo "tls-cert-file /tls/redis.crt" >> /etc/sentinel.conf &&
+             echo "tls-key-file /tls/redis.key" >> /etc/sentinel.conf &&
+             echo "tls-ca-cert-file /tls/ca.crt" >> /etc/sentinel.conf &&
+             echo "tls-auth-clients yes" >> /etc/sentinel.conf &&
+             echo "tls-replication yes" >> /etc/sentinel.conf &&
+             echo "protected-mode no" >> /etc/sentinel.conf &&
+             echo "sentinel monitor mymaster $${HOST_IP} 6379 2" >> /etc/sentinel.conf &&
+             echo "sentinel announce-hostnames yes" >> /etc/sentinel.conf &&
+             echo "sentinel resolve-hostnames yes" >> /etc/sentinel.conf &&
+             echo "sentinel down-after-milliseconds mymaster 10000" >> /etc/sentinel.conf &&
+             echo "sentinel failover-timeout mymaster 10000" >> /etc/sentinel.conf &&
+             echo "sentinel parallel-syncs mymaster 1" >> /etc/sentinel.conf &&
+             echo "sentinel auth-pass mymaster $${REDIS_PASSWORD}" >> /etc/sentinel.conf &&
+             echo "requirepass $${SENTINEL_PASSWORD}" >> /etc/sentinel.conf &&
+             echo "sentinel announce-ip $${HOST_IP}" >> /etc/sentinel.conf &&
+             echo "sentinel announce-port 26379" >> /etc/sentinel.conf &&
+             redis-sentinel /etc/sentinel.conf'
+    networks:
+      redis-net:
+        ipv4_address: 172.21.0.6
+
+  sentinel-2:
+    image: redis:latest
+    container_name: sentinel-2
+    hostname: sentinel-2
+    depends_on:
+      - redis-master
+    ports:
+      - "26380:26379"
+    environment:
+      - HOST_IP=${HOST_IP:-192.168.1.2}
+      - HOST_LAN_IP=${HOST_LAN_IP:-192.168.1.2}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - SENTINEL_PASSWORD=${SENTINEL_PASSWORD}
+    volumes:
+      - ./tls:/tls:ro
+    command: >
+      sh -c 'echo "bind 0.0.0.0" > /etc/sentinel.conf &&
+                   echo "port 0" >> /etc/sentinel.conf &&
+                   echo "tls-port 26379" >> /etc/sentinel.conf &&
+                   echo "tls-cert-file /tls/redis.crt" >> /etc/sentinel.conf &&
+                   echo "tls-key-file /tls/redis.key" >> /etc/sentinel.conf &&
+                   echo "tls-ca-cert-file /tls/ca.crt" >> /etc/sentinel.conf &&
+                   echo "tls-auth-clients yes" >> /etc/sentinel.conf &&
+                   echo "tls-replication yes" >> /etc/sentinel.conf &&
+                   echo "protected-mode no" >> /etc/sentinel.conf &&
+                   echo "sentinel monitor mymaster $${HOST_IP} 6379 2" >> /etc/sentinel.conf &&
+                   echo "sentinel announce-hostnames yes" >> /etc/sentinel.conf &&
+                   echo "sentinel resolve-hostnames yes" >> /etc/sentinel.conf &&
+                   echo "sentinel down-after-milliseconds mymaster 10000" >> /etc/sentinel.conf &&
+                   echo "sentinel failover-timeout mymaster 10000" >> /etc/sentinel.conf &&
+                   echo "sentinel parallel-syncs mymaster 1" >> /etc/sentinel.conf &&
+                   echo "sentinel auth-pass mymaster $${REDIS_PASSWORD}" >> /etc/sentinel.conf &&
+                   echo "requirepass $${SENTINEL_PASSWORD}" >> /etc/sentinel.conf &&
+                   echo "sentinel announce-ip $${HOST_IP}" >> /etc/sentinel.conf &&
+                   echo "sentinel announce-port 26379" >> /etc/sentinel.conf &&
+                   redis-sentinel /etc/sentinel.conf'
+    networks:
+      redis-net:
+        ipv4_address: 172.21.0.7
+
+  sentinel-3:
+    image: redis:latest
+    container_name: sentinel-3
+    hostname: sentinel-3
+    depends_on:
+      - redis-master
+    ports:
+      - "26381:26379"
+    environment:
+      - HOST_IP=${HOST_IP:-192.168.1.2}
+      - HOST_LAN_IP=${HOST_LAN_IP:-192.168.1.2}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - SENTINEL_PASSWORD=${SENTINEL_PASSWORD}
+    volumes:
+      - ./tls:/tls:ro
+    command: >
+      sh -c 'echo "bind 0.0.0.0" > /etc/sentinel.conf &&
+                   echo "port 0" >> /etc/sentinel.conf &&
+                   echo "tls-port 26379" >> /etc/sentinel.conf &&
+                   echo "tls-cert-file /tls/redis.crt" >> /etc/sentinel.conf &&
+                   echo "tls-key-file /tls/redis.key" >> /etc/sentinel.conf &&
+                   echo "tls-ca-cert-file /tls/ca.crt" >> /etc/sentinel.conf &&
+                   echo "tls-auth-clients yes" >> /etc/sentinel.conf &&
+                   echo "tls-replication yes" >> /etc/sentinel.conf &&
+                   echo "protected-mode no" >> /etc/sentinel.conf &&
+                   echo "sentinel monitor mymaster $${HOST_IP} 6379 2" >> /etc/sentinel.conf &&
+                   echo "sentinel announce-hostnames yes" >> /etc/sentinel.conf &&
+                   echo "sentinel resolve-hostnames yes" >> /etc/sentinel.conf &&
+                   echo "sentinel down-after-milliseconds mymaster 10000" >> /etc/sentinel.conf &&
+                   echo "sentinel failover-timeout mymaster 10000" >> /etc/sentinel.conf &&
+                   echo "sentinel parallel-syncs mymaster 1" >> /etc/sentinel.conf &&
+                   echo "sentinel auth-pass mymaster $${REDIS_PASSWORD}" >> /etc/sentinel.conf &&
+                   echo "requirepass $${SENTINEL_PASSWORD}" >> /etc/sentinel.conf &&
+                   echo "sentinel announce-ip $${HOST_IP}" >> /etc/sentinel.conf &&
+                   echo "sentinel announce-port 26379" >> /etc/sentinel.conf &&
+                   redis-sentinel /etc/sentinel.conf'
+    networks:
+      redis-net:
+        ipv4_address: 172.21.0.8
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: redisinsight
+    ports:
+      - "5540:5540"
+    networks:
+      redis-net:
+        ipv4_address: 172.21.0.9
+
+  elasticsearch:
+    image: elasticsearch:8.15.0
+    container_name: elasticsearch
+    environment:
+      - node.name=elasticsearch
+      - cluster.name=es-docker-cluster
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=true
+      - ELASTIC_PASSWORD=${ES_PASSWORD:-elastic_password_@admin}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      redis-net:
+        ipv4_address: 172.21.0.11
+
+networks:
+  redis-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16
+volumes:
+  es_data:
+
+secrets:
+  pip_conf:
+    file: ./compose/secrets/pip.conf

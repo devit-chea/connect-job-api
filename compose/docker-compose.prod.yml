@@ -1,0 +1,57 @@
+services:
+  wdg-job-platform-api:
+    image: "${DOCKER_IMAGE:-}:${DOCKER_TAG:-}"
+    container_name: job-platform-api
+    pull_policy: always
+    build:
+      context: ../.
+      dockerfile: Dockerfile
+      args:
+        - BASE_DOCKER_IMAGE=${BASE_DOCKER_IMAGE}
+        - DJANGO_ENV=${DJANGO_ENV}
+      secrets:
+        - pip_conf
+    env_file:
+      - ../.env
+    ports:
+      - "8300:8000"
+    command: /app/entrypoint-server.sh
+    networks:
+      - job-platform-network
+    volumes:
+      - /var/log/services:/app/logs
+
+  wdg-job-platform-celery:
+    image: "${DOCKER_IMAGE:-}:${DOCKER_TAG:-}"
+    container_name: job-platform-celery
+    pull_policy: always
+    env_file:
+      - ../.env
+    environment:
+      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD}@redis-job-platform-api:6379/0
+    depends_on:
+      - wdg-job-platform-api
+    networks:
+      - job-platform-network
+    command: /app/entrypoint-celery.sh
+
+  wdg-job-platform-celery-beat:
+    image: "${DOCKER_IMAGE:-}:${DOCKER_TAG:-}"
+    container_name: job-platform-celery-beat
+    pull_policy: always
+    env_file:
+      - ../.env
+    environment:
+      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD}@redis-job-platform-api:6379/0
+    depends_on:
+      - wdg-job-platform-celery
+    networks:
+      - job-platform-network
+    command: /app/entrypoint-celery-beat.sh
+
+networks:
+  job-platform-network:
+
+secrets:
+  pip_conf:
+    file: ./secrets/pip.conf

@@ -1,0 +1,55 @@
+# Byte-compiled / optimized Python files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.cache
+
+# Virtual environment
+.avenv/
+.venv/
+venv/
+env/
+.env
+compose/secrets/pip.conf
+
+# Editor & OS generated files
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Logs & Debugging
+logs/
+*.log
+debug.log
+
+# Django & Celery
+*.db
+*.sqlite3
+/media/
+staticfiles/
+celerybeat-schedule
+
+# Git
+.git/
+.gitignore
+
+# Docker
+.dockerignore
+Dockerfile
+
+# Pipenv & Poetry
+Pipfile
+Pipfile.lock
+poetry.lock
+
+# Pytest & Coverage
+.coverage
+htmlcov/
+*.cover
+*.pytest_cache/
+nosetests.xml
+test-results/
+junit.xml

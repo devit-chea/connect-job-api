@@ -1,0 +1,53 @@
+{% extends "../base_entrance.html" %}
+{% load i18n %}
+{% load baseauths %}
+{% block head_title %}
+    {% translate "Confirm OTP" %}
+{% endblock head_title %}
+
+{% block content %}
+    {% element img src=logo_transparency style="width: 110px; height:auto" alt="Connect Job" %} {% endelement %}
+    {% element br %} {% endelement br %}
+    
+    {% element p %}
+        Dear <strong>{{ first_name|default:"Valued Member"|capfirst }}</strong>,
+    {% endelement %}
+
+    {% element br %} {% endelement br %}
+    {% element p %}
+        You requested a One-Time Password (OTP) to access your Connect Job account.
+    {% endelement %}
+    
+    {% element br %} {% endelement br %}
+    {% element p %}
+        Your verification code is:
+    {% endelement %}
+
+    {% element br %} {% endelement br %}
+    {% element h3 style="color: #000000; margin: 0;" %}
+        {{ otp }}
+    {% endelement %}
+
+    {% element br %} {% endelement br %}
+    {% element p %}
+        This code is valid for the next {{ expire_in }}. Please do not share this code with anyone.
+    {% endelement %}
+
+    {% element br %} {% endelement br %}
+    {% element p %}
+        <strong>Didn't request this?</strong>
+    {% endelement %}
+    {% element p %}
+        If you did not make this request, someone else may be trying to access your account. Please change your password immediately.
+    {% endelement %}
+
+    {% element br %} {% endelement br %}
+    {% element p %}
+        Thanks for using Connect Job!
+    {% endelement %}
+    {% element p %}
+        <strong>The Connect Job Team</strong>
+    {% endelement %}
+
+{% endblock content %}
+
