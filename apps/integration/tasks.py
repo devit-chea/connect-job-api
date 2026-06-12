@@ -56,6 +56,54 @@ def sync_pipeline_to_erp(self, application_id: int) -> None:
 
 @shared_task(
     bind=True,
+    name="integration.sync_recruiter_to_erp",
+    max_retries=3,
+    default_retry_delay=60,
+)
+def sync_recruiter_to_erp(self, ucp_id: int) -> None:
+    """
+    Async Celery task: push a newly created recruiter/admin user to the ERP
+    and store the IntegrationUserMapping for cross-system reference.
+
+    The mapping record with partner_user_id=None is already written by the
+    signal before this task runs, so the reference always exists locally.
+    """
+    from apps.auth_oauth.models.user_company_profile import UserCompanyProfile
+    from apps.integration.services.recruiter_sync_service import RecruiterSyncService
+
+    ucp = (
+        UserCompanyProfile.objects
+        .select_related("user", "profile", "company")
+        .filter(id=ucp_id)
+        .first()
+    )
+
+    if not ucp:
+        logger.warning(
+            "sync_recruiter_to_erp: ucp_id=%s not found — task aborted", ucp_id
+        )
+        return
+
+    try:
+        RecruiterSyncService.sync_to_erp(ucp)
+    except Exception as exc:
+        logger.warning(
+            "sync_recruiter_to_erp: attempt %d/%d failed ucp_id=%s error=%s",
+            self.request.retries + 1,
+            self.max_retries + 1,
+            ucp_id,
+            exc,
+        )
+        try:
+            raise self.retry(exc=exc)
+        except self.MaxRetriesExceededError:
+            logger.error(
+                "sync_recruiter_to_erp: all retries exhausted ucp_id=%s", ucp_id
+            )
+
+
+@shared_task(
+    bind=True,
     name="integration.sync_applicant_to_erp",
     max_retries=3,
     default_retry_delay=60,   # 1 minute between retries

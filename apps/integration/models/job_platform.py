@@ -109,7 +109,9 @@ class IntegrationUserMapping(AbstractBaseModel, AbstractBaseCompany):
         IntegrationPartner, on_delete=models.CASCADE, related_name="user_mappings"
     )
     local_user_id = models.CharField(max_length=100)
-    partner_user_id = models.CharField(max_length=100)
+    # Nullable: mapping is created immediately on user creation even before ERP
+    # responds with its own user ID. Filled in once ERP confirms the record.
+    partner_user_id = models.CharField(max_length=100, null=True, blank=True)
 
     class Meta:
         db_table = "integrate_user_mappings"
