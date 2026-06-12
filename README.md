@@ -1,209 +1,373 @@
-# WDG Micro Skeleton
+# ConnectJob Platform API
 
-**<span style="color:#B1CD46">WDG Micro Skeleton</span>** is a lightweight and modular boilerplate designed for building Python-based microservices using Django. This template incorporates essential features and best practices, such as environment-specific configurations, Docker integration, automatic skeleton generation, and app removal. It aims to streamline development, promote scalability, and simplify deployment while providing flexibility for adding and removing apps with ease.
+Backend REST API for the ConnectJob recruitment platform — built with Django 5, Django REST Framework, PostgreSQL, Redis, Elasticsearch, and Celery.
 
-## <span style="color:#0077FF">Features</span>
+---
 
-- **Environment-Specific Configurations**: Easily manage different settings for development, production, and other environments.
-- **Docker Integration**: Pre-configured Docker support with Dockerfile and docker-compose.yml for seamless containerization and deployment.
-- **Automatic Skeleton Generation**: Quickly set up a new microservice or app with the built-in script, creating a project skeleton that includes all essential files and directories.
-- **Modular Application Setup**: Scaffold new Django apps within the microservice, ensuring a clean and consistent structure for new features or services.
-- **App Removal**: Easily remove apps from the project, including their associated files, configurations, and app structure.
+## Table of Contents
 
-## 📂 Project Boilerplate
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Local Development (Docker)](#local-development-docker)
+- [Local Development (Manual)](#local-development-manual)
+- [Environment Variables](#environment-variables)
+- [Management Commands](#management-commands)
+- [API Documentation](#api-documentation)
+- [Integration Feature](#integration-feature)
+- [Settings Environments](#settings-environments)
 
-```sh
-•
-├── 📁 wdg_micro_skeleton              # Custom application module
-│   ├── 📁 apps                        # Application-specific code
-│   │   ├── 📄 __init__.py             # Initialization file for the app
-│   │   ├── 📄 core_service.py         # Script cloning a project skeleton
-│   │   ├── 📁 core                    # Core components of the app
-│   │   │   ├── 📁 exceptions          # Custom exceptions
-│   │   │   ├── 📁 management          # Management commands
-│   │   │   ├── 📁 middleware          # Custom middleware
-│   │   │   ├── 📁 migrations          # Database migrations
-│   │   │   ├── 📁 mixins              # Mixin classes for reusability
-│   │   │   ├── 📁 models              # Data models for the app
-│   │   │   ├── 📁 selectors           # Query logic and data retrieval
-│   │   │   ├── 📁 serializers         # Data serializers for API responses
-│   │   │   ├── 📁 services            # Core business logic and services
-│   │   │   ├── 📁 tests               # Unit tests for the app
-│   │   │   ├── 📁 utils               # Utility functions and helpers
-│   │   │   ├── 📁 views               # View functions or classes for handling requests
-│   │   │   ├── 📄 __init__.py         # Initialization file for the core app
-│   │   │   ├── 📄 apps.py             # App-specific settings and configurations
-│   │   │   ├── 📄 constants.py        # Constants used across the app
-│   │   │   └── 📄 urls.py             # URL routing for the core app
-│   ├── 📁 configs                     # Configuration files for the project
-│   │   ├── 📁 databases               # Database configuration
-│   │   ├── 📁 settings                  # Django-specific configurations
-│   │   ├── 📁 exceptions              # General exception configurations
-│   │   ├── 📁 extensions              # Project-specific extensions or features
-│   │   ├── 📄 __init__.py             # Initialization file for configs
-│   │   ├── 📄 asgi.py                 # ASGI configuration
-│   │   ├── 📄 celery.py               # Celery configuration for background tasks
-│   │   ├── 📄 env.py                  # Environment variable configuration
-│   │   ├── 📄 pagination.py           # Pagination settings
-│   │   ├── 📄 settings.py             # Main project settings
-│   │   ├── 📄 urls.py                 # Main URL routing for the project
-│   │   └── 📄 wsgi.py                 # WSGI configuration
-│   ├── 📁 requirements                # Project dependencies
-│   │   └── 📄 base.txt                # Base dependencies file
-│   ├── 📁 storages                    # Storage-related configurations
-│   │   ├── 📁 logs                    # Log storage configurations
-│   │   └── 📁 security                # Security configurations
-│   ├── 📄 __init__.py                 # Initialization file for the module
-│   ├── 📄 .env                        # Environment variables file
-│   ├── 📄 .env.example                # Example environment variables file
-│   ├── 📄 .gitignore                  # Git ignore rules
-│   ├── 📄 MANIFEST.in                 # Manifest file for packaging
-│   ├── 📄 manage.py                   # Command-line utility for managing the Django project
-│   ├── 📄 README.md                   # Project documentation file
-│   ├── 📄 requirements.txt            # List of project dependencies
-│   ├── 📄 setup.py                    # Setup file for the project
-•
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | Django 5.1, Django REST Framework 3.15 |
+| Auth | JWT RS256 (SimpleJWT), OAuth2 (Google, LinkedIn, Apple, Telegram) |
+| Database | PostgreSQL 14 |
+| Cache / Broker | Redis 7 (standalone) or Redis Sentinel (HA) |
+| Search | Elasticsearch 8.15 |
+| Task Queue | Celery 5, django-celery-beat |
+| API Docs | drf-spectacular (Swagger / ReDoc) |
+| Container | Docker, Docker Compose |
+| Python | 3.12 |
+
+---
+
+## Project Structure
 
 ```
+.
+├── apps/
+│   ├── core/                   # Base exceptions, middleware, pagination, sentinel
+│   ├── base/                   # Reference models (Company, Country, GeoArea, Language)
+│   ├── auth_oauth/             # User model, JWT auth, social auth pipelines
+│   ├── auth_setting/           # Auth settings per user
+│   ├── auth_totp_mail/         # TOTP / email two-factor auth
+│   ├── recruiter_management/   # Recruiter company management
+│   ├── job_management_app/     # Job posts, pipelines, applications
+│   ├── activity_tracking_app/  # Redis-based view/apply counters → DB flush
+│   ├── file_management_app/    # File uploads (S3 / PowerScale)
+│   ├── elasticsearch_app/      # Search documents and services
+│   ├── notification_app/       # WDG Notification service integration
+│   ├── dashboard/              # Aggregated stats
+│   ├── configuration/          # System config entries
+│   └── integration/            # ConnectJob ↔ WingDigital ERP integration
+├── config/
+│   ├── settings/
+│   │   ├── base.py             # All settings, env-driven
+│   │   ├── dev.py              # Dev (imports base)
+│   │   ├── prod.py             # Production (imports base)
+│   │   └── local.py            # Local Docker dev — standalone Redis, console email
+│   ├── celery.py
+│   ├── urls.py
+│   ├── wsgi.py
+│   └── asgi.py
+├── compose/                    # Dev / UAT / Prod docker-compose files
+├── compose_local/              # Local development docker-compose (standalone stack)
+│   └── docker-compose.local.yml
+├── requirements/
+│   ├── base.txt
+│   ├── dev.txt
+│   └── prod.txt
+├── Dockerfile
+├── entrypoint-server.sh        # gunicorn
+├── entrypoint-celery.sh        # celery worker
+├── entrypoint-celery-beat.sh   # celery beat
+└── ConnectJob_Integration.postman_collection.json
+```
 
-## <span style="color:#0077FF">Getting Started</span>
+---
 
-Take a few minutes to set up your project with a well-structured foundation using WDG Micro Skeleton. This boilerplate provides a ready-made structure to help you quickly build and scale Python-based microservices with Django, ensuring best practices from the start.
+## Local Development (Docker)
 
-### <span style="color:#B1CD46">1. Create Your Empty Service Repository</span>
+The fastest way to get the full stack running locally.
 
-To start developing a microservice, create a new Bitbucket repository using the following naming convention:
+### Prerequisites
 
-**Naming Convention**
+- Docker Desktop installed and running
+- Private pip registry credentials (for internal `wdg-*` packages)
 
-- _Prefix:_ `pos`
-- _Suffix:_ `service`
-- Examples:
-  - `pos_user_service` (for user management)
-  - `pos_payment_service` (for payment handling)
-
-### <span style="color:#B1CD46">2. Clone Your Empty Repository</span>
+### Step 1 — Configure pip credentials
 
 ```bash
-git clone https://github.com/your_username/repository_name.git
-cd your_project_directory
+cp compose/secrets/pip.example.conf compose/secrets/pip.conf
+# Open compose/secrets/pip.conf and replace USERNAME and PASSWORD
 ```
 
-### <span style="color:#B1CD46">3. Setting Up the Virtual Environment</span>
-
-To ensure a clean and isolated environment for your project dependencies, follow these steps to create a virtual environment.
-
-💡 Assuming you are already in the current project directory.
-
-💡 Ensure Python is installed on your system. You can verify this by running python --version (Windows) or python3 --version (macOS/Linux).
-
-### 💻 Windows
-
-1. Create a virtual environment, run: `python -m venv venv`
-2. Activate the virtual environment, run: `venv\Scripts\activate`
-3. To deactivate the virtual environment, run: `deactivate`
-
-### 💻 macOS / Linux / Git Bash
-
-1. Create a virtual environment, run: `python3 -m venv venv`
-2. Activate the virtual environment, run: `source venv/bin/activate`
-3. To deactivate the virtual environment, run: `deactivate`
-
-### <span style="color:#B1CD46">4. Install WDG Micro Skeleton</span>
-
-Run the following command to install the Boilerplate:
-
-1.  **Installation**
-
-    ```bash
-    pip install git+https://bitbucket.org/wingdev/wdg_micro_skeleton.git
-    ```
-
-    This will install the latest version of `wdg_micro_skeleton` along with its required dependencies.
-
-    > Successfully installed wdg_micro_skeleton-0.1.0
-
-2.  **Verify installation, Run**
-
-    ```bash
-    pip show wdg_micro_skeleton
-    ```
-
-3.  **After installation, Run**
-
-    ```bash
-    wdg_micro_skeleton
-    ```
-
-    `wdg_micro_skeleton` is a command-line tool that provides a ready-to-use template for setting up a Django-based microservice project. It includes essential configurations, directory structures, and a setup script to help developers quickly initiate their projects with minimal effort.
-
-    The command will print the following instructions:
-
-    > Next steps:
-    >
-    > 1.  Rename the `configs` folder to match your project name (if needed).
-    > 2.  Install your own dependencies: `pip install -r requirements.txt`.
-    > 3.  Update `.env` with your environment variables.
-    > 4.  Run `python manage.py migrate` to initialize the database.
-    >
-    > You're ready to start!
-
-4.  **Create a New Django App with WDG Micro Skeleton**
-
-    Use the following command to create a new Django app based on the WDG boilerplate:
-
-    ```bash
-    python manage.py create app_name
-    ```
-
-    Replace `app_name` with the name of your new app. Running this command will generate a new app structure based on the WDG Micro Skeleton boilerplate. Additionally, it will automatically add the app to the `LOCAL_APPS` section in your Django settings file (base.py).
-
-    > **Note**: If the newly created app encounters an error, please re-check that your app is listed in `LOCAL_APPS` section in your Django settings file (base.py).
-
-5.  **Remove an Existing Django App**
-
-    To remove an app created using the WDG Micro Skeleton, use the following command:
-
-    ```bash
-    python manage.py destroy app_name
-    ```
-
-    Replace `app_name` with the name of the app you want to remove. This command will completely delete all components associated with the app created in Section 3. Specifically, it will:
-
-    - Remove the app folder and its contents.
-
-    - Automatically update the `LOCAL_APPS` section in the Django settings file (base.py) to remove the app.
-
-    > **Note**: Ensure you have backed up any necessary code or configurations before running this command, as it cannot be undone.
-
-### <span style="color:#B1CD46">5. Uninstall WDG Micro Skeleton</span>
-
-To remove `wdg_micro_skeleton` from your environment, run the following command:
+### Step 2 — Configure environment
 
 ```bash
-pip uninstall wdg_micro_skeleton
+cp .env.example .env
+# The generated .env already has local defaults.
+# Required values to verify:
+#   DJANGO_SECRET_KEY (already filled)
+#   JWT_SIGNING_KEY / JWT_VERIFYING_KEY (already generated)
+#   DB_NAME / DB_USER / DB_PASSWORD (defaults: job_platform_local / postgres / postgres)
 ```
 
-This command will completely uninstall the `wdg_micro_skeleton` package and its related files from your Python environment.
-
-Or you can force reinstall:
+### Step 3 — Build and start
 
 ```bash
-pip install --force-reinstall git+https://bitbucket.org/wingdev/wdg_micro_skeleton.git
+# Build all images (api, celery, celery-beat)
+docker compose -f compose_local/docker-compose.local.yml build
+
+# Start everything
+docker compose -f compose_local/docker-compose.local.yml up -d
 ```
 
+### Step 4 — Initialise the database (first time only)
+
+```bash
+# Run migrations
+docker compose -f compose_local/docker-compose.local.yml exec api python manage.py migrate
+
+# Seed required data
+docker compose -f compose_local/docker-compose.local.yml exec api \
+  python manage.py default_pipeline_config \
+    --code="PIP-00" --is-active --is-default --force-only-default \
+    --name="Default Pipeline" --description="Default Pipeline for all company."
+
+docker compose -f compose_local/docker-compose.local.yml exec api \
+  python manage.py default_job_categories_config
+
+docker compose -f compose_local/docker-compose.local.yml exec api \
+  python manage.py insert_mail_template
+
+# Create superadmin
+docker compose -f compose_local/docker-compose.local.yml exec api \
+  python manage.py create_default_super_admin
+```
+
+### Service URLs
+
+| Service | URL |
+|---|---|
+| API | http://localhost:8000 |
+| Swagger UI | http://localhost:8000/swagger/ |
+| ReDoc | http://localhost:8000/redoc/ |
+| RedisInsight | http://localhost:5540 |
+| PostgreSQL | localhost:5432 |
+| Elasticsearch | http://localhost:9200 |
+
+### Useful commands
+
+```bash
+# Follow API logs
+docker compose -f compose_local/docker-compose.local.yml logs -f api
+
+# Follow Celery logs
+docker compose -f compose_local/docker-compose.local.yml logs -f celery
+
+# Run a management command
+docker compose -f compose_local/docker-compose.local.yml exec api python manage.py <command>
+
+# Open a Django shell
+docker compose -f compose_local/docker-compose.local.yml exec api python manage.py shell
+
+# Stop all services
+docker compose -f compose_local/docker-compose.local.yml down
+
+# Stop and wipe all data volumes (full reset)
+docker compose -f compose_local/docker-compose.local.yml down -v
+```
+
+---
+
+## Local Development (Manual)
+
+If you prefer running Django directly on your machine.
+
+### Prerequisites
+
+- Python 3.12
+- PostgreSQL 14
+- Redis 7
+- Elasticsearch 8.15
+
+Start only the infrastructure services:
+
+```bash
+cd compose_local
+docker compose -f docker-compose.local.yml up -d postgres redis elasticsearch
+```
+
+### Setup
+
+```bash
+# Create and activate virtual environment
+python3 -m venv venv
+source venv/bin/activate          # macOS / Linux
+# venv\Scripts\activate           # Windows
+
+# Install dev dependencies
+pip install -r requirements/dev.txt
+
+# Copy and edit environment file
+cp .env.example .env
+
+# Run migrations
+DJANGO_SETTINGS_MODULE=config.settings.local python manage.py migrate
+
+# Seed data
+DJANGO_SETTINGS_MODULE=config.settings.local python manage.py default_job_categories_config
+DJANGO_SETTINGS_MODULE=config.settings.local python manage.py insert_mail_template
+DJANGO_SETTINGS_MODULE=config.settings.local python manage.py create_default_super_admin
+
+# Start development server
+DJANGO_SETTINGS_MODULE=config.settings.local python manage.py runserver
+
+# Start Celery worker (separate terminal)
+DJANGO_SETTINGS_MODULE=config.settings.local \
+  celery -A config worker -l info --pool=threads --concurrency=5
+
+# Start Celery beat scheduler (separate terminal)
+DJANGO_SETTINGS_MODULE=config.settings.local \
+  celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+```
+
+---
+
+## Environment Variables
+
+Copy `.env.example` to `.env` and fill in the required values.
+
+| Variable | Description | Local default |
+|---|---|---|
+| `DJANGO_SETTINGS_MODULE` | Settings module to load | `config.settings.local` |
+| `DJANGO_SECRET_KEY` | Django secret key | Generated |
+| `DB_*` | PostgreSQL connection | `localhost:5432 / postgres` |
+| `REDIS_USE_SENTINEL` | `True` = Sentinel, `False` = standalone | `False` |
+| `REDIS_URL` | Redis cache URL | `redis://localhost:6379/1` |
+| `CELERY_BROKER_URL` | Celery broker URL | `redis://localhost:6379/0` |
+| `CELERY_RESULT_BACKEND` | Celery result backend | `redis://localhost:6379/2` |
+| `ES_URLS` | Elasticsearch URL(s) | `http://localhost:9200` |
+| `JWT_SIGNING_KEY` | RSA private key (RS256) | Generated |
+| `JWT_VERIFYING_KEY` | RSA public key (RS256) | Generated |
+| `CONNECTOR_INTEGRATION_KEY` | AES-256 key for ERP integration | Generated |
+| `CONNECTOR_INTEGRATION_URL` | WingDigital ERP base URL | `http://localhost:9000` |
+
+For the full list see `.env.example`.
+
+### Generating JWT keys manually
+
+```bash
+openssl genrsa -out private.pem 4096
+openssl rsa -in private.pem -pubout -out public.pem
+
+# Format for .env (replace newlines with \n)
+JWT_SIGNING_KEY=$(awk 'NF {printf "%s\\n",$0}' private.pem)
+JWT_VERIFYING_KEY=$(awk 'NF {printf "%s\\n",$0}' public.pem)
+```
+
+### Generating the integration encryption key
+
+```bash
+python3 -c "import os, base64; print(base64.urlsafe_b64encode(os.urandom(32)).decode())"
+# Paste the output into CONNECTOR_INTEGRATION_KEY
+```
+
+---
+
+## Management Commands
+
+```bash
+# Scaffold a new Django app (WDG convention)
+python manage.py create <app_name>
+
+# Remove an existing app
+python manage.py destroy <app_name>
+
+# Generate RSA key pair for JWT
+python manage.py jwt_keygen
+
+# Create default superadmin user
+python manage.py create_default_super_admin
+
+# Seed default pipeline configuration
+python manage.py default_pipeline_config \
+  --code="PIP-00" --is-active --is-default --force-only-default \
+  --name="Default Pipeline" --description="Default Pipeline"
+
+# Seed default job categories
+python manage.py default_job_categories_config
+
+# Seed default system values
+python manage.py default_sys_values_config
+
+# Seed email templates
+python manage.py insert_mail_template
+
+# Import institutions
+python manage.py import_institutions
+
+# Load reference data
 python manage.py loaddata apps/base/data/factory/countries.json
 python manage.py loaddata apps/base/data/factory/res_language.json
+```
 
-##
-celery -A config worker -l info --pool=threads --concurrency=5
+---
 
+## API Documentation
 
-<div align="center">
-    <h3 style="color:#0077FF"><strong style="color:#0077FF">THANK</strong> <strong style="color:#B1CD46">YOU</strong></h3>
-    <p>We sincerely appreciate your interest in using the <strong>WDG Micro Skeleton</strong> boilerplate. Your support helps us build efficient and scalable solutions for microservices.
-    </p>
-    <p>If you have any suggestions, encounter issues, or would like to contribute, please feel free to open an issue or submit a pull request.</p>
-    <p>Thank you for being a part of our <strong style="color:#B1CD46">Wing</strong> <strong style="color:#0077FF">Digital</strong> journey! 💡</p>
+Swagger UI and ReDoc are available in `DEBUG=True` mode:
 
-</div>
+- **Swagger UI** — http://localhost:8000/swagger/
+- **ReDoc** — http://localhost:8000/redoc/
+- **OpenAPI schema** — http://localhost:8000/schema/
+
+All endpoints under `/api/` require a `Bearer <access_token>` header except public endpoints.
+
+A Postman collection covering the full **Integration feature** is available at:
+
+```
+ConnectJob_Integration.postman_collection.json
+```
+
+Import it into Postman and set the `base_url` and `jwt_token` collection variables to get started.
+
+---
+
+## Integration Feature
+
+ConnectJob integrates bidirectionally with **WingDigital ERP** via a PKCE-based API handshake.
+
+### What it does
+
+| Flow | Direction | Trigger |
+|---|---|---|
+| Job posting | WingDigital → ConnectJob | ERP calls `POST /api/v1/integration/jobs/publish` |
+| Applicant sync | ConnectJob → WingDigital | Applicant submits application |
+| Pipeline sync | ConnectJob → WingDigital | Recruiter moves pipeline stage |
+| Recruiter sync | ConnectJob → WingDigital | Operator creates recruiter for integrated company |
+
+### Key endpoints
+
+```
+POST /api/v1/integration/initialize      Start PKCE handshake
+POST /api/v1/integration/exchange        Complete key exchange
+POST /api/v1/integration/disconnect      ERP-initiated disconnect
+POST /api/v1/integration/jobs/publish    ERP posts a job vacancy
+GET  /api/v1/integration/data-mapping    List field mappings
+POST /api/v1/integration/data-mapping    Create field mapping
+```
+
+### Data mapping
+
+The admin configures field and value mappings in the **Data Mapping** UI so ERP field names (e.g. `position`) are automatically translated to ConnectJob field names (e.g. `title`) when jobs are published. 19 field mappings and 9 job category value mappings are seeded automatically on first connection.
+
+See `project_integration_feature.md` for the full architecture reference.
+
+---
+
+## Settings Environments
+
+| File | Used for | Redis mode |
+|---|---|---|
+| `config/settings/local.py` | Local Docker / manual dev | Standalone (`DefaultClient`) |
+| `config/settings/dev.py` | Dev server (CI / staging) | Controlled by `REDIS_USE_SENTINEL` |
+| `config/settings/prod.py` | Production | Sentinel (`SentinelClient`) |
+
+Switch by setting `DJANGO_SETTINGS_MODULE` in your `.env` or shell.
+
+The `REDIS_USE_SENTINEL` flag in `.env` controls whether Django connects to a Redis Sentinel cluster (`True`) or a plain standalone Redis instance (`False`). `local.py` forces it to `False` regardless of the env file.
