@@ -1,5 +1,6 @@
 import secrets
 from datetime import timedelta
+from urllib.parse import urlencode
 from django.conf import settings
 
 import requests
@@ -16,6 +17,7 @@ from apps.integration.models.job_platform import (
 )
 from apps.integration.serializers.integration_serializer import TokenExchangeSerializer
 from apps.integration.utils.crypto_utils import hash_sha256, base64url_encode_sha256
+from apps.integration.utils.mapping_utils import seed_default_field_mappings
 from apps.base.mixins.custom_jwt_request_mixin import CustomJWTRequestMixin
 
 
@@ -104,7 +106,7 @@ class IntegrationExchangeView(CustomJWTRequestMixin, APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            IntegrationPartner.objects.create(
+            partner = IntegrationPartner.objects.create(
                 organization_id=handshake.organization_id,
                 partner_tenant_id=erp_company_id,
                 # ERP -> ConnectJob
@@ -114,6 +116,10 @@ class IntegrationExchangeView(CustomJWTRequestMixin, APIView):
                 partner_inbound_key=key_alpha,
                 status=ConnectorStatus.ACTIVE,
             )
+
+            # Seed the standard field mappings so the admin sees a ready-to-use
+            # Data Mapping page immediately after connecting.
+            seed_default_field_mappings(partner)
 
             handshake.delete()
 
@@ -126,39 +132,6 @@ class IntegrationExchangeView(CustomJWTRequestMixin, APIView):
         )
 
 
-class DropIntegrationView(CustomJWTRequestMixin, APIView):
-    """
-    ENDPOINT 2: https://api.Integration.com/v1/integration/disconnect
-    Called synchronously by the ERP backend to tear down integration lines.
-    """
-
-    permission_classes = [AllowAny]
-
-    def post(self, request, *args, **kwargs):
-        auth_header = request.headers.get("Authorization", "")
-        if not auth_header or not auth_header.startswith("Bearer "):
-            return Response(
-                {"status": "error", "message": "Unauthorized"},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
-        incoming_key_beta = auth_header.split(" ")[1]
-        incoming_hash = hash_sha256(incoming_key_beta)
-        with transaction.atomic():
-            try:
-                # O(1) indexed lookup instead of slow database text looping
-                partner = IntegrationPartner.objects.select_for_update().get(
-                    partner_outbound_hash=incoming_hash, status="active"
-                )
-                partner.delete()  # Cascades to user mapping tables
-            except IntegrationPartner.DoesNotExist:
-                return Response(
-                    {"status": "error", "message": "Forbidden: Token invalid."},
-                    status=status.HTTP_403_FORBIDDEN,
-                )
-        return Response(
-            {"status": "success", "message": "Connection terminated"},
-            status=status.HTTP_200_OK,
-        )
 
 
 class InitializeHandshakeView(CustomJWTRequestMixin, APIView):
@@ -183,7 +156,12 @@ class InitializeHandshakeView(CustomJWTRequestMixin, APIView):
         code_verifier = secrets.token_urlsafe(64)
         code_challenge = base64url_encode_sha256(code_verifier)
 
-        redirect_uri = f"{settings.CONNECTOR_INTEGRATION_URL}/integration/callback"
+        # After the user accepts on Wing Digital the browser is redirected here,
+        # bringing them back to ConnectJob's integration tab with the result.
+        redirect_uri = (
+            f"{settings.WEB_BASE_URL}/recruiter/company/integration/callback"
+            f"?state={state}"
+        )
 
         IntegrationHandshake.objects.create(
             temporary_code=temporary_code,
@@ -194,13 +172,18 @@ class InitializeHandshakeView(CustomJWTRequestMixin, APIView):
             expires_at=timezone.now() + timedelta(minutes=10),
         )
 
+        # URL-encode redirect_uri so it survives cleanly as a query parameter
+        # inside the authorize URL (it contains its own query string).
+        authorize_params = urlencode({
+            "client_id": "job_platform_id",
+            "temporary_code": temporary_code,
+            "state": state,
+            "code_challenge": code_challenge,
+            "redirect_uri": redirect_uri,
+        })
         authorize_url = (
             f"{settings.CONNECTOR_INTEGRATION_URL}/api/oauth/authorize"
-            f"?client_id=job_platform_id"
-            f"&temporary_code={temporary_code}"
-            f"&state={state}"
-            f"&code_challenge={code_challenge}"
-            f"&redirect_uri={redirect_uri}"
+            f"?{authorize_params}"
         )
 
         return Response(
@@ -287,7 +270,14 @@ class ErpUserLookupProxyView(CustomJWTRequestMixin, APIView):
         )
 
 
-class DropIntegrationView(CustomJWTRequestMixin, APIView):
+class DropIntegrationView(CustomJWTRequestMixin, APIView):  # noqa: E302
+    """
+    POST /api/v1/integration/disconnect
+    Called server-to-server by the ERP backend (Wing Digital) when the
+    user clicks "Disconnect" in the ERP's Integration tab.
+    Auth: X-CONNECTOR-KEY header carrying Key_Beta (partner_outbound_key).
+    """
+
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -295,31 +285,27 @@ class DropIntegrationView(CustomJWTRequestMixin, APIView):
 
         if not connector_key:
             return Response(
-                {
-                    "status": "error",
-                    "message": "Missing connector key.",
-                },
+                {"status": "error", "message": "Missing connector key."},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
         incoming_hash = hash_sha256(connector_key)
 
-        partner = IntegrationPartner.objects.filter(
-            partner_outbound_hash=incoming_hash,
-            status="active",
-        ).first()
-
-        if not partner:
-            return Response(
-                {
-                    "status": "error",
-                    "message": "Invalid connector key.",
-                },
-                status=status.HTTP_403_FORBIDDEN,
+        with transaction.atomic():
+            partner = (
+                IntegrationPartner.objects.select_for_update()
+                .filter(partner_outbound_hash=incoming_hash, status=ConnectorStatus.ACTIVE)
+                .first()
             )
 
-        partner.status = "disconnected"
-        partner.save(update_fields=["status"])
+            if not partner:
+                return Response(
+                    {"status": "error", "message": "Invalid connector key."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+            partner.status = ConnectorStatus.DISCONNECTED
+            partner.save(update_fields=["status", "updated_at"])
 
         return Response(
             {

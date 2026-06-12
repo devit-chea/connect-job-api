@@ -37,6 +37,9 @@ class AdminCompanySerializer(BaseSerializer):
         allow_null=True,
     )
     is_agree_policy = serializers.BooleanField(required=False, default=True)
+    integrate_domain = serializers.CharField(
+        required=False, allow_null=True, allow_blank=True
+    )
 
     class Meta:
         model = Company
@@ -58,8 +61,11 @@ class AdminCompanySerializer(BaseSerializer):
             "country",
             "access_type",
             "is_agree_policy",
+            # Integration tab — optional: only present when integrate_domain is set
+            "integrate_domain",
+            "is_integrate",
         ]
-        read_only_fields = ["id", "create_date", "write_date"]
+        read_only_fields = ["id", "create_date", "write_date", "is_integrate"]
 
     def validate_name(self, value):
         instance = getattr(self, "instance", None)
@@ -101,7 +107,11 @@ class AdminCompanyDetailSerializer(BaseSerializer):
         allow_null=True,
     )
     is_agree_policy = serializers.BooleanField(required=False, default=True)
+    integrate_domain = serializers.CharField(
+        required=False, allow_null=True, allow_blank=True
+    )
     employees = serializers.SerializerMethodField()
+    integration = serializers.SerializerMethodField()
 
     class Meta:
         model = Company
@@ -122,9 +132,13 @@ class AdminCompanyDetailSerializer(BaseSerializer):
             "country",
             "access_type",
             "is_agree_policy",
+            # Integration tab — null when no domain is configured
+            "integrate_domain",
+            "is_integrate",
+            "integration",
             "employees",
         ]
-        read_only_fields = ["id", "create_date", "write_date"]
+        read_only_fields = ["id", "create_date", "write_date", "is_integrate"]
 
     def validate_name(self, value):
         instance = getattr(self, "instance", None)
@@ -136,6 +150,33 @@ class AdminCompanyDetailSerializer(BaseSerializer):
         ):
             raise serializers.ValidationError("Company Name already exists!")
         return value
+
+    def get_integration(self, instance):
+        # No domain configured → company has no integration tab to show
+        if not instance.integrate_domain:
+            return None
+
+        from apps.integration.models.job_platform import IntegrationPartner
+        from apps.integration.constants import ConnectorStatus
+
+        partner = IntegrationPartner.objects.filter(
+            organization_id=str(instance.id),
+            status=ConnectorStatus.ACTIVE,
+        ).first()
+
+        if partner:
+            return {
+                "is_connected": True,
+                "partner_tenant_id": partner.partner_tenant_id,
+                "status": partner.status,
+                "connected_at": partner.created_at,
+            }
+        return {
+            "is_connected": False,
+            "partner_tenant_id": None,
+            "status": None,
+            "connected_at": None,
+        }
 
     def get_employees(self, instance):
         qs = instance.user_company_profile_company.select_related("profile").only(

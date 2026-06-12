@@ -215,6 +215,57 @@ class RecruiterCompaniesListSerializer(WritableNestedModelSerializer, BaseSerial
         return data
 
 
+class CompanyIntegrationTabSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the Integration tab on the company form.
+
+    Read:  id, integrate_domain, is_integrate, and live partner connection info.
+    Write: only integrate_domain can be changed here; is_integrate is system-managed.
+    """
+
+    integration = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Company
+        fields = ["id", "integrate_domain", "is_integrate", "integration"]
+        extra_kwargs = {
+            "id": {"read_only": True},
+            "is_integrate": {"read_only": True},
+            "integrate_domain": {"required": False, "allow_null": True, "allow_blank": True},
+        }
+
+    def get_integration(self, obj):
+        if not obj.integrate_domain:
+            return None
+
+        from apps.integration.models.job_platform import IntegrationPartner
+        from apps.integration.constants import ConnectorStatus
+
+        partner = IntegrationPartner.objects.filter(
+            organization_id=str(obj.id),
+            status=ConnectorStatus.ACTIVE,
+        ).first()
+
+        if partner:
+            return {
+                "is_connected": True,
+                "partner_tenant_id": partner.partner_tenant_id,
+                "status": partner.status,
+                "connected_at": partner.created_at,
+            }
+        return {
+            "is_connected": False,
+            "partner_tenant_id": None,
+            "status": None,
+            "connected_at": None,
+        }
+
+    def validate_integrate_domain(self, value):
+        if value:
+            return value.strip().lower().rstrip("/")
+        return value
+
+
 class CompanyRequestWithAdminRecruiterSerializer(WritableNestedModelSerializer, BaseAndAuditSerializer):
     parent_id = serializers.PrimaryKeyRelatedField(
         source="parent",

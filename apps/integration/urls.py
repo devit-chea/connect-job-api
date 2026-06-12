@@ -11,6 +11,14 @@ from apps.integration.views.company_integration_view import (
     CompanyIntegrationLookupByDomainView,
     CompanyIntegrationRegisterView,
 )
+from apps.integration.views.data_mapping_view import (
+    DataMappingListView,
+    DataMappingDetailView,
+    RestoreDefaultMappingsView,
+    ValueMappingListView,
+    ValueMappingDetailView,
+)
+from apps.integration.views.inbound_job_post_view import IntegrationJobPostView
 
 router = DefaultRouter(trailing_slash=False)
 
@@ -33,6 +41,38 @@ urlpatterns = [
                     "companies/lookup",
                     CompanyIntegrationLookupByDomainView.as_view(),
                     name="integration-lookup",
+                ),
+                # Inbound job posting from ERP
+                path(
+                    "jobs/publish",
+                    IntegrationJobPostView.as_view(),
+                    name="integration-jobs-publish",
+                ),
+                # Data Mapping endpoints
+                path(
+                    "data-mapping/restore-defaults",
+                    RestoreDefaultMappingsView.as_view(),
+                    name="integration-data-mapping-restore-defaults",
+                ),
+                path(
+                    "data-mapping",
+                    DataMappingListView.as_view(),
+                    name="integration-data-mapping-list",
+                ),
+                path(
+                    "data-mapping/<uuid:pk>",
+                    DataMappingDetailView.as_view(),
+                    name="integration-data-mapping-detail",
+                ),
+                path(
+                    "data-mapping/<uuid:field_mapping_id>/values",
+                    ValueMappingListView.as_view(),
+                    name="integration-value-mapping-list",
+                ),
+                path(
+                    "data-mapping/<uuid:field_mapping_id>/values/<uuid:pk>",
+                    ValueMappingDetailView.as_view(),
+                    name="integration-value-mapping-detail",
                 ),
             ]
         ),

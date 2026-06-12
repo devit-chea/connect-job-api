@@ -2,6 +2,7 @@ from django.urls import path, include
 from rest_framework import routers
 
 from apps.auth_oauth.views.telegram_auth_view import RecruiterTelegramSignupView
+from apps.base.views.company_view import CompanyIntegrationTabView
 from apps.recruiter_management.views.recruiter_company_view import (
     CompanyRequestInformationView,
     RecruiterCompanyView,
@@ -67,6 +68,11 @@ urlpatterns = [
     path("recruiter/request-rejected-reason", CompanyProfileRejectReasonView.as_view()),
     path(
         "recruiter/company/update-profile", RecruiterUpdateProfileCompanyView.as_view()
+    ),
+    path(
+        "recruiter/company/integration",
+        CompanyIntegrationTabView.as_view(),
+        name="recruiter-company-integration",
     ),
     path(
         "recruiter/invitations-schedules",

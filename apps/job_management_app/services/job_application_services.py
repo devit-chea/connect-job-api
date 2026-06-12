@@ -36,6 +36,19 @@ from django.db.models import Q
 logger = logging.getLogger(__name__)
 
 
+def _dispatch_pipeline_sync(application_id: int) -> None:
+    """Lazy-import guard so job_management_app never hard-imports integration."""
+    try:
+        from apps.integration.tasks import sync_pipeline_to_erp
+        sync_pipeline_to_erp.delay(application_id)
+    except Exception as exc:
+        logger.warning(
+            "_dispatch_pipeline_sync: failed to queue ERP sync application_id=%s error=%s",
+            application_id,
+            exc,
+        )
+
+
 class JobApplicationServices:
 
     @staticmethod
@@ -322,6 +335,11 @@ class JobApplicationServices:
             logging.warning(
                 f"[PipelineHistory] failed to write history: {e}", exc_info=True
             )
+
+        # Sync pipeline movement to the connected ERP after the transaction commits.
+        # Uses on_commit so the task is never queued for a rolled-back transaction.
+        _app_id = app.id
+        transaction.on_commit(lambda: _dispatch_pipeline_sync(_app_id))
 
         return app
 
