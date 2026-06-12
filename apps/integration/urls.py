@@ -6,6 +6,7 @@ from apps.integration.views.job_platform_view import (
     InitializeHandshakeView,
     IntegrationExchangeView,
     ErpUserLookupProxyView,
+    JobCategoryLookupView,
 )
 from apps.integration.views.company_integration_view import (
     CompanyIntegrationLookupByDomainView,
@@ -30,6 +31,7 @@ urlpatterns = [
                 path("initialize", InitializeHandshakeView.as_view()),
                 path("exchange", IntegrationExchangeView.as_view()),
                 path("look_up/users", ErpUserLookupProxyView.as_view()),
+                path("look_up/categories", JobCategoryLookupView.as_view(), name="integration-lookup-categories"),
                 path("disconnect", DropIntegrationView.as_view()),
                 # Company Collection endpoints
                 path(

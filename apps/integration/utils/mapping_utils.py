@@ -1,24 +1,24 @@
 import logging
 
-from apps.integration.constants import DEFAULT_FIELD_MAPPINGS
+from apps.integration.constants import DEFAULT_FIELD_MAPPINGS, DEFAULT_CATEGORY_VALUE_MAPPINGS
 
 logger = logging.getLogger(__name__)
 
 
 def seed_default_field_mappings(partner) -> list:
     """
-    Creates the pre-defined field mappings for a newly connected partner.
+    Creates the pre-defined field mappings for a newly connected partner and
+    seeds value mappings for the 'category' field automatically.
 
     Behaviour:
     - Skips any source_field already configured (preserves customisations).
-    - Safe to call multiple times (idempotent per source_field).
+    - Safe to call multiple times (idempotent per source_field / target_value).
     - Returns the list of newly created IntegrationFieldMapping objects.
-
-    Called automatically in IntegrationExchangeView after the partner is saved,
-    and exposed via POST /api/v1/integration/data-mapping/restore-defaults so
-    admins can re-apply missing defaults without losing existing ones.
     """
-    from apps.integration.models.job_platform import IntegrationFieldMapping
+    from apps.integration.models.job_platform import (
+        IntegrationFieldMapping,
+        IntegrationValueMapping,
+    )
 
     existing_source_fields = set(
         IntegrationFieldMapping.objects.filter(partner=partner)
@@ -40,16 +40,63 @@ def seed_default_field_mappings(partner) -> list:
             )
         )
 
+    created = []
     if to_create:
         created = IntegrationFieldMapping.objects.bulk_create(to_create)
         logger.info(
-            "seed_default_field_mappings: partner_id=%s seeded %d mappings",
+            "seed_default_field_mappings: partner_id=%s seeded %d field mappings",
             partner.id,
             len(created),
         )
-        return created
 
-    return []
+    # Seed default job category value mappings for the 'category' field
+    _seed_category_value_mappings(partner)
+
+    return created
+
+
+def _seed_category_value_mappings(partner) -> None:
+    """
+    Seeds the 9 standard job category value mappings under the 'category' field.
+    Idempotent — skips any target_value already present.
+    """
+    from apps.integration.models.job_platform import (
+        IntegrationFieldMapping,
+        IntegrationValueMapping,
+    )
+
+    category_mapping = IntegrationFieldMapping.objects.filter(
+        partner=partner,
+        source_field="category",
+        is_active=True,
+    ).first()
+
+    if not category_mapping:
+        return
+
+    existing_targets = set(
+        category_mapping.value_mappings.values_list("target_value", flat=True)
+    )
+
+    to_create = []
+    for source_value, target_value in DEFAULT_CATEGORY_VALUE_MAPPINGS:
+        if target_value in existing_targets:
+            continue
+        to_create.append(
+            IntegrationValueMapping(
+                field_mapping=category_mapping,
+                source_value=source_value,
+                target_value=target_value,
+            )
+        )
+
+    if to_create:
+        IntegrationValueMapping.objects.bulk_create(to_create)
+        logger.info(
+            "_seed_category_value_mappings: partner_id=%s seeded %d value mappings",
+            partner.id,
+            len(to_create),
+        )
 
 
 def transform_erp_payload(partner_id: str, erp_payload: dict) -> dict:
@@ -92,13 +139,22 @@ def transform_erp_payload(partner_id: str, erp_payload: dict) -> dict:
             }
             connectjob_value = value_lookup.get(str(erp_value))
             if connectjob_value is None:
-                # No matching value mapping — fall back to raw ERP value
-                logger.debug(
-                    "transform_erp_payload: no value mapping for field '%s' value '%s'",
-                    erp_key,
-                    erp_value,
-                )
-                connectjob_value = erp_value
+                # No value mapping matched — use default_value if configured
+                # (e.g. "Other" for job category), otherwise keep the raw ERP value.
+                if mapping.default_value is not None:
+                    connectjob_value = mapping.default_value
+                    logger.debug(
+                        "transform_erp_payload: field '%s' value '%s' unmatched"
+                        " → using default '%s'",
+                        erp_key, erp_value, mapping.default_value,
+                    )
+                else:
+                    connectjob_value = erp_value
+                    logger.debug(
+                        "transform_erp_payload: field '%s' value '%s' unmatched"
+                        " → keeping raw ERP value",
+                        erp_key, erp_value,
+                    )
         else:
             connectjob_value = erp_value
 

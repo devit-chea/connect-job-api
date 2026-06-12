@@ -199,6 +199,74 @@ class InitializeHandshakeView(CustomJWTRequestMixin, APIView):
         )
 
 
+class JobCategoryLookupView(CustomJWTRequestMixin, APIView):
+    """
+    GET /api/v1/integration/look_up/categories
+
+    Returns ConnectJob's own job category list so the Data Mapping UI can
+    populate the Source Value dropdown for the 'category' field.
+    Also proxies to the ERP to fetch their category list for the Target Value
+    dropdown when ?side=erp is passed.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        side = request.query_params.get("side", "connectjob")
+
+        if side == "erp":
+            return self._fetch_erp_categories(request)
+
+        return self._fetch_connectjob_categories()
+
+    def _fetch_connectjob_categories(self):
+        from apps.job_management_app.models.job_category_model import JobCategoryModel
+
+        categories = (
+            JobCategoryModel.objects
+            .filter(is_deleted=False, is_active=True)
+            .values("id", "name", "code")
+            .order_by("name")
+        )
+        return Response({"data": list(categories)})
+
+    def _fetch_erp_categories(self, request):
+        organization_id = str(request.company_id)
+        from apps.integration.models.job_platform import IntegrationPartner
+        from apps.integration.constants import ConnectorStatus
+
+        partner = IntegrationPartner.objects.filter(
+            organization_id=organization_id,
+            status=ConnectorStatus.ACTIVE,
+        ).first()
+
+        if not partner:
+            return Response(
+                {"status": "error", "message": "No active integration found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        try:
+            erp_response = requests.get(
+                f"{settings.CONNECTOR_INTEGRATION_URL}/api/connector-integration/categories",
+                headers={"X-CONNECTOR-KEY": partner.partner_inbound_key},
+                timeout=10,
+            )
+        except requests.RequestException as exc:
+            return Response(
+                {"status": "error", "message": "ERP server could not be reached.", "details": str(exc)},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        if erp_response.status_code != 200:
+            return Response(
+                {"status": "error", "message": "ERP rejected category lookup.", "details": erp_response.text},
+                status=erp_response.status_code,
+            )
+
+        return Response(erp_response.json(), status=status.HTTP_200_OK)
+
+
 class ErpUserLookupProxyView(CustomJWTRequestMixin, APIView):
     """
     ConnectJob frontend calls this endpoint.

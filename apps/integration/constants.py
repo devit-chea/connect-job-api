@@ -33,8 +33,8 @@ DEFAULT_FIELD_MAPPINGS = [
     ("benefits",            "benefits",           "free",   None),
 
     # ── Classification ─────────────────────────────────────────────────────────
-    # mapping_type "mapped" → admin should add value-level mappings for categories
-    ("category",            "job_category",       "mapped", None),
+    # default_value "Other" → used when ERP sends a category with no value mapping
+    ("category",            "job_category",       "mapped", "Other"),
     ("job_level",           "job_level",          "free",   None),
     ("time_type",           "job_type",           "free",   None),
     ("contract_type",       "employment_type",    "free",   None),
@@ -53,4 +53,24 @@ DEFAULT_FIELD_MAPPINGS = [
     ("hire_no",             "no_of_positions",    "free",   "1"),
     ("expire_date",         "expire_date",        "free",   None),
     ("year_of_experience",  "experience_years",   "free",   None),
+]
+
+# Pre-defined value mappings for the "category" field.
+# Each tuple: (source_value, target_value)
+#   source_value = ConnectJob job category name (what gets stored on the job post)
+#   target_value = ERP category name (what WingDigital sends in the payload)
+#
+# Both sides default to the same names so the mapping works out-of-the-box when
+# both platforms share the same taxonomy. Admins can update the target_value
+# dropdowns in the Data Mapping UI to match their ERP's actual category labels.
+DEFAULT_CATEGORY_VALUE_MAPPINGS = [
+    ("Business & Management",       "Business & Management"),
+    ("Information Technology (IT)", "Information Technology (IT)"),
+    ("Engineering & Technical",     "Engineering & Technical"),
+    ("Education & Training",        "Education & Training"),
+    ("Sales & Marketing",           "Sales & Marketing"),
+    ("Customer Service & Support",  "Customer Service & Support"),
+    ("Finance & Accounting",        "Finance & Accounting"),
+    ("Legal & Compliance",          "Legal & Compliance"),
+    ("Healthcare & Medical",        "Healthcare & Medical"),
 ]
