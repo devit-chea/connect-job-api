@@ -2,7 +2,7 @@
   "info": {
     "name": "ConnectJob — Integration Feature",
     "_postman_id": "connectjob-integration-v1",
-    "description": "Full collection for the ConnectJob ↔ WingDigital ERP integration feature.\n\n**Setup:**\n1. Set `base_url` to your server (e.g. `http://localhost:8000`)\n2. Login and paste the JWT into `jwt_token`\n3. Paste Key_Beta (outbound key) into `connector_key` for ERP-side calls\n\n**Folders:**\n- Auth — get a token\n- Integration Lifecycle — handshake, exchange, disconnect\n- Data Mapping — field + value mapping CRUD\n- Inbound Job Posting — ERP posts a job vacancy\n- Recruiter Integration Tab — company integration settings\n- Operator (Admin) Company — admin company management with integration tab",
+    "description": "Full collection for the ConnectJob ↔ WingDigital ERP integration feature.\n\n**Setup:**\n1. Set `base_url` to your server (e.g. `http://localhost:8000`)\n2. Login and paste the JWT into `jwt_token`\n3. Paste Key_Beta (outbound key) into `connector_key` for ERP-side calls\n\n**Folders:**\n- Auth — get a token\n- Integration Lifecycle — handshake, exchange, disconnect, category/user lookups\n- Data Mapping — field + value mapping CRUD (19 field defaults + 9 category value defaults auto-seeded on connect)\n- Inbound Job Posting — ERP posts a job vacancy (payload auto-transformed via mappings)\n- Recruiter Integration Tab — company integration settings\n- Operator (Admin) Company — admin company management with integration tab\n\n**Category mapping defaults (seeded automatically on connect):**\nJob Category field: default_value = 'Other' (unknown ERP categories fall back to Other)\n9 pre-seeded value mappings: Business & Management, IT, Engineering & Technical, Education & Training, Sales & Marketing, Customer Service & Support, Finance & Accounting, Legal & Compliance, Healthcare & Medical",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -149,6 +149,50 @@
             },
             "description": "Proxy call — ConnectJob frontend triggers this; ConnectJob calls WingDigital server-to-server using Key_Alpha. Returns the list of ERP users for the connected company."
           }
+        },
+
+        {
+          "name": "Lookup Categories — ConnectJob (Source Value)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/integration/look_up/categories",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "integration", "look_up", "categories"],
+              "query": [
+                {
+                  "key": "side",
+                  "value": "connectjob",
+                  "description": "Returns ConnectJob's own JobCategoryModel list — used to populate the Source Value dropdown in Data Mapping UI",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Returns ConnectJob job categories (id, name, code) from JobCategoryModel.\nUsed by the Data Mapping UI to populate the **Source Value** dropdown for the 'category' field.\n\nResponse:\n{\n  \"data\": [\n    { \"id\": 1, \"name\": \"Business & Management\", \"code\": \"\" },\n    { \"id\": 2, \"name\": \"Information Technology (IT)\", \"code\": \"\" },\n    ...\n  ]\n}"
+          }
+        },
+
+        {
+          "name": "Lookup Categories — ERP (Target Value)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/integration/look_up/categories?side=erp",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "integration", "look_up", "categories"],
+              "query": [
+                {
+                  "key": "side",
+                  "value": "erp",
+                  "description": "Proxies to ERP's /api/connector-integration/categories using Key_Alpha — used to populate the Target Value dropdown",
+                  "disabled": false
+                }
+              ]
+            },
+            "description": "Proxies to WingDigital ERP using Key_Alpha (X-CONNECTOR-KEY) to fetch the ERP's own category list.\nUsed by the Data Mapping UI to populate the **Target Value** dropdown for the 'category' field.\nReturns 404 if no active integration exists for the company."
+          }
         }
 
       ]
@@ -156,7 +200,7 @@
 
     {
       "name": "Data Mapping",
-      "description": "Configure field-level and value-level mappings between WingDigital fields and ConnectJob fields.\nAll endpoints require JWT (recruiter of the connected company).",
+      "description": "Configure field-level and value-level mappings between WingDigital fields and ConnectJob fields.\nAll endpoints require JWT (recruiter of the connected company).\n\n**Auto-seeded on connect:**\n- 19 field mappings (title←position, category←job_category with default='Other', salary_min←min_salary, etc.)\n- 9 job category value mappings under 'category' field (Business & Management, IT, Engineering & Technical, etc.)\n\n**Category lookup endpoints** (for populating dropdowns in the UI):\n- GET /look_up/categories → ConnectJob categories (Source Value dropdown)\n- GET /look_up/categories?side=erp → ERP categories via proxy (Target Value dropdown)",
       "item": [
 
         {
