@@ -1,0 +1,109 @@
+# Local development infrastructure — standalone services only (no TLS, no Sentinel)
+#
+# Usage:
+#   cd compose_local
+#   docker compose -f docker-compose.local.yml up -d
+#
+# Then run the Django server locally:
+#   DJANGO_SETTINGS_MODULE=config.settings.local python manage.py runserver
+#
+# Services exposed:
+#   PostgreSQL  → localhost:5432
+#   Redis       → localhost:6379
+#   Elasticsearch → localhost:9200  (http, security disabled for local ease)
+#   RedisInsight → localhost:5540   (Redis GUI)
+
+services:
+
+  postgres:
+    image: bitnami/postgresql:14
+    container_name: job-platform-postgres-local
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRESQL_USERNAME: ${DB_USER:-postgres}
+      POSTGRESQL_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRESQL_DATABASE: ${DB_NAME:-job_platform_local}
+    volumes:
+      - pg_data_local:/bitnami/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - local-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: job-platform-redis-local
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: >
+      redis-server
+      --requirepass "${REDIS_PASSWORD:-}"
+      --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data_local:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--no-auth-warning",
+             "-a", "${REDIS_PASSWORD:-}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - local-net
+
+  elasticsearch:
+    image: elasticsearch:8.15.0
+    container_name: job-platform-es-local
+    restart: unless-stopped
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - node.name=es-local
+      - cluster.name=es-local-cluster
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      # Disable security for local dev — no username/password needed
+      - xpack.security.enabled=false
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - es_data_local:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health | grep -qv '\"status\":\"red\"'"]
+      interval: 15s
+      timeout: 10s
+      retries: 8
+    networks:
+      - local-net
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: job-platform-redisinsight-local
+    restart: unless-stopped
+    ports:
+      - "5540:5540"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - local-net
+
+networks:
+  local-net:
+    driver: bridge
+
+volumes:
+  pg_data_local:
+  redis_data_local:
+  es_data_local:
