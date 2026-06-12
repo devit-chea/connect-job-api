@@ -314,44 +314,56 @@ REDIS_SSL_OPTIONS = {
     "ssl_keyfile": env.str("REDIS_SSL_KEY_FILE", "/etc/valkey/tls/client.key"),
 } if REDIS_SSL else {}
 
-CACHES = {
-    "default": {
-        # Use the standard django-redis backend
-        "BACKEND": "django_redis.cache.RedisCache",
-        # LOCATION must follow this format for Sentinel
-        "LOCATION": REDIS_URL,
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.SentinelClient",
-            "CONNECTION_FACTORY": "apps.core.sentinel.SentinelConnectionFactory",
-            "SENTINELS": REDIS_SENTINELS,
-            "SENTINEL_KWARGS": {
-                "password": REDIS_SENTINEL_PASSWORD,
-                **REDIS_SSL_OPTIONS,
+if REDIS_USE_SENTINEL:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_URL,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.SentinelClient",
+                "CONNECTION_FACTORY": "apps.core.sentinel.SentinelConnectionFactory",
+                "SENTINELS": REDIS_SENTINELS,
+                "SENTINEL_KWARGS": {
+                    "password": REDIS_SENTINEL_PASSWORD,
+                    **REDIS_SSL_OPTIONS,
+                },
+                "CONNECTION_POOL_KWARGS": {
+                    "max_connections": 100,
+                    **REDIS_SSL_OPTIONS,
+                },
+                "PASSWORD": REDIS_PASSWORD,
             },
-            "CONNECTION_POOL_KWARGS": {
-                "max_connections": 100,
-                **REDIS_SSL_OPTIONS,
-            },
-            "PASSWORD": REDIS_PASSWORD,
         }
     }
-}
-
-CELERY_BROKER_TRANSPORT_OPTIONS = {
-    "master_name": REDIS_SENTINEL_MASTER,
-    "password": REDIS_PASSWORD,
-    "sentinel_kwargs": {
-        "password": REDIS_SENTINEL_PASSWORD,
-        **REDIS_SSL_OPTIONS
-    },
-    "connection_kwargs": {
+    CELERY_BROKER_TRANSPORT_OPTIONS = {
+        "master_name": REDIS_SENTINEL_MASTER,
         "password": REDIS_PASSWORD,
-        **REDIS_SSL_OPTIONS,
+        "sentinel_kwargs": {
+            "password": REDIS_SENTINEL_PASSWORD,
+            **REDIS_SSL_OPTIONS,
+        },
+        "connection_kwargs": {
+            "password": REDIS_PASSWORD,
+            **REDIS_SSL_OPTIONS,
+        },
     }
-}
+else:
+    # Standalone Redis — used for local development (REDIS_USE_SENTINEL=False)
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": REDIS_URL,
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+                "PASSWORD": REDIS_PASSWORD,
+                **REDIS_SSL_OPTIONS,
+            },
+        }
+    }
+    CELERY_BROKER_TRANSPORT_OPTIONS = {}
 
 CELERY_BROKER_URL = env.str("CELERY_BROKER_URL", None)
-CELERY_BROKER_USE_SSL = REDIS_SSL_OPTIONS
+CELERY_BROKER_USE_SSL = REDIS_SSL_OPTIONS if REDIS_SSL else {}
 CELERY_RESULT_BACKEND = env.str("CELERY_RESULT_BACKEND", None)
 
 CELERY_TASK_ACKS_LATE = True
