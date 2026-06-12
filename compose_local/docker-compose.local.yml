@@ -1,19 +1,94 @@
-# Local development infrastructure — standalone services only (no TLS, no Sentinel)
+# Local development — full stack (app + infrastructure, standalone Redis, no TLS/Sentinel)
 #
-# Usage:
-#   cd compose_local
-#   docker compose -f docker-compose.local.yml up -d
+# Prerequisites:
+#   1. Copy your pip credentials:
+#        cp compose/secrets/pip.example.conf compose/secrets/pip.conf
+#        # then fill in USERNAME and PASSWORD in pip.conf
+#   2. Copy and fill your env:
+#        cp .env.example .env
+#        # ensure REDIS_USE_SENTINEL=False and DJANGO_SETTINGS_MODULE=config.settings.local
 #
-# Then run the Django server locally:
-#   DJANGO_SETTINGS_MODULE=config.settings.local python manage.py runserver
+# Usage (run from project root):
+#   docker compose -f compose_local/docker-compose.local.yml up --build
 #
-# Services exposed:
-#   PostgreSQL  → localhost:5432
-#   Redis       → localhost:6379
-#   Elasticsearch → localhost:9200  (http, security disabled for local ease)
-#   RedisInsight → localhost:5540   (Redis GUI)
+# Services:
+#   api          → http://localhost:8000   (runserver, hot-reload via volume mounts)
+#   celery       → background task worker
+#   celery-beat  → periodic task scheduler
+#   postgres     → localhost:5432
+#   redis        → localhost:6379
+#   elasticsearch → localhost:9200 (security disabled)
+#   redisinsight → http://localhost:5540
+
+x-app-base: &app-base
+  build:
+    context: ..
+    dockerfile: Dockerfile
+    args:
+      DJANGO_ENV: dev
+    secrets:
+      - pip_conf
+  env_file:
+    - ../.env
+  environment:
+    DJANGO_SETTINGS_MODULE: config.settings.local
+    REDIS_USE_SENTINEL: "false"
+    REDIS_URL: "redis://:${REDIS_PASSWORD:-}@redis:6379/1"
+    CELERY_BROKER_URL: "redis://:${REDIS_PASSWORD:-}@redis:6379/0"
+    CELERY_RESULT_BACKEND: "redis://:${REDIS_PASSWORD:-}@redis:6379/2"
+    DB_HOST: postgres
+    ES_URLS: "http://elasticsearch:9200"
+    ES_USERNAME: ""
+    ES_PASSWORD: ""
+  volumes:
+    # Hot-reload: mount source directories so code changes reflect immediately
+    - ../apps:/app/apps
+    - ../config:/app/config
+    - ../static:/app/static
+    - ../storages:/app/storages
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+    elasticsearch:
+      condition: service_healthy
+  networks:
+    - local-net
 
 services:
+
+  # ── Application ─────────────────────────────────────────────────────────────
+
+  api:
+    <<: *app-base
+    container_name: job-platform-api-local
+    ports:
+      - "8000:8000"
+    # runserver for hot-reload; entrypoint-server.sh (gunicorn) for closer-to-prod
+    command: python manage.py runserver 0.0.0.0:8000
+
+  celery:
+    <<: *app-base
+    container_name: job-platform-celery-local
+    command: >
+      celery -A config worker
+      --loglevel=info
+      --pool=threads
+      --concurrency=4
+
+  celery-beat:
+    <<: *app-base
+    container_name: job-platform-celery-beat-local
+    command: >
+      celery -A config beat
+      --loglevel=info
+      --scheduler django_celery_beat.schedulers:DatabaseScheduler
+      --max-interval 10
+    depends_on:
+      - celery
+
+  # ── Infrastructure ───────────────────────────────────────────────────────────
 
   postgres:
     image: bitnami/postgresql:14
@@ -71,7 +146,6 @@ services:
       - discovery.type=single-node
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-      # Disable security for local dev — no username/password needed
       - xpack.security.enabled=false
     ulimits:
       memlock:
@@ -107,3 +181,7 @@ volumes:
   pg_data_local:
   redis_data_local:
   es_data_local:
+
+secrets:
+  pip_conf:
+    file: ../compose/secrets/pip.conf
