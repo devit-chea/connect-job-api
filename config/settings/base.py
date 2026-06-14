@@ -131,6 +131,7 @@ DATABASES = {
         "PASSWORD": env.str("DB_PASSWORD"),
         "HOST": env.str("DB_HOST"),
         "PORT": env.str("DB_PORT"),
+        "CONN_MAX_AGE": env.int("DB_CONN_MAX_AGE", 60),
     }
 }
 
@@ -328,9 +329,11 @@ if REDIS_USE_SENTINEL:
                     **REDIS_SSL_OPTIONS,
                 },
                 "CONNECTION_POOL_KWARGS": {
-                    "max_connections": 100,
+                    "max_connections": env.int("REDIS_MAX_CONNECTIONS", 200),
                     **REDIS_SSL_OPTIONS,
                 },
+                "SOCKET_CONNECT_TIMEOUT": 5,
+                "SOCKET_TIMEOUT": 5,
                 "PASSWORD": REDIS_PASSWORD,
             },
         }
@@ -356,6 +359,9 @@ else:
             "OPTIONS": {
                 "CLIENT_CLASS": "django_redis.client.DefaultClient",
                 "PASSWORD": REDIS_PASSWORD,
+                "max_connections": env.int("REDIS_MAX_CONNECTIONS", 200),
+                "SOCKET_CONNECT_TIMEOUT": 5,
+                "SOCKET_TIMEOUT": 5,
                 **REDIS_SSL_OPTIONS,
             },
         }
@@ -369,6 +375,15 @@ CELERY_RESULT_BACKEND = env.str("CELERY_RESULT_BACKEND", None)
 CELERY_TASK_ACKS_LATE = True
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+
+CELERY_TASK_ROUTES = {
+    "elastic_task.*": {"queue": "es_sync"},
+    "activity_tracking.bulk_update_job_post_activity_counts_to_es": {"queue": "es_sync"},
+    "activity_tracking.flush_redis_counters_to_db":   {"queue": "activity"},
+    "activity_tracking.flush_dirty_job_post_ids":     {"queue": "activity"},
+    "activity_tracking.increment_activity":           {"queue": "activity"},
+    "integration.*": {"queue": "erp_sync"},
+}
 
 IMAGEKIT_CACHEFILE_DIR = "storages/thumbnails/"
 
@@ -508,7 +523,7 @@ WDG_STORAGE_PATH = env.str("WDG_STORAGE_PATH", "job_platform")
 WDG_STORAGE_PROXY_URL = env.str("WDG_STORAGE_PROXY_URL", "")
 
 # PERMISSION CATCHING
-AUTH_PERMISSION_CACHE_ENABLED = env.bool("AUTH_PERMISSION_CACHE_ENABLED", False)
+AUTH_PERMISSION_CACHE_ENABLED = env.bool("AUTH_PERMISSION_CACHE_ENABLED", True)
 CACHE_REDIS_URL = REDIS_URL
 
 # auth2 pipeline
