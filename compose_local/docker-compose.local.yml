@@ -26,8 +26,8 @@ x-app-base: &app-base
     dockerfile: Dockerfile
     args:
       DJANGO_ENV: dev
-    secrets:
-      - pip_conf
+    # secrets:
+    #   - pip_conf
   env_file:
     - ../.env
   environment:
@@ -66,7 +66,15 @@ services:
     ports:
       - "8000:8000"
     # runserver for hot-reload; entrypoint-server.sh (gunicorn) for closer-to-prod
-    command: python manage.py runserver 0.0.0.0:8000
+    command: >
+      sh -c "python manage.py migrate --run-syncdb &&
+             python manage.py runserver 0.0.0.0:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import socket; socket.create_connection(('localhost', 8000), timeout=2)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   celery:
     <<: *app-base
@@ -76,6 +84,9 @@ services:
       --loglevel=info
       --pool=threads
       --concurrency=4
+    depends_on:
+      api:
+        condition: service_healthy
 
   celery-beat:
     <<: *app-base
@@ -86,22 +97,23 @@ services:
       --scheduler django_celery_beat.schedulers:DatabaseScheduler
       --max-interval 10
     depends_on:
-      - celery
+      api:
+        condition: service_healthy
 
   # ── Infrastructure ───────────────────────────────────────────────────────────
 
   postgres:
-    image: bitnami/postgresql:14
+    image: postgres:14-alpine
     container_name: job-platform-postgres-local
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
-      POSTGRESQL_USERNAME: ${DB_USER:-postgres}
-      POSTGRESQL_PASSWORD: ${DB_PASSWORD:-postgres}
-      POSTGRESQL_DATABASE: ${DB_NAME:-job_platform_local}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-job_platform_local}
     volumes:
-      - pg_data_local:/bitnami/postgresql
+      - pg_data_local:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
       interval: 10s
@@ -115,7 +127,7 @@ services:
     container_name: job-platform-redis-local
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "6382:6379"
     command: >
       redis-server
       --requirepass "${REDIS_PASSWORD:-}"
@@ -182,6 +194,6 @@ volumes:
   redis_data_local:
   es_data_local:
 
-secrets:
-  pip_conf:
-    file: ../compose/secrets/pip.conf
+# secrets:
+#   pip_conf:
+#     file: ../compose/secrets/pip.conf
