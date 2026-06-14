@@ -1,4 +1,4 @@
-from django_filters.rest_framework import DjangoFilterBackend
+from apps.core.filters import SafeDjangoFilterBackend as DjangoFilterBackend
 from rest_framework import generics, views, status, response
 from rest_framework import viewsets, mixins
 from rest_framework.filters import SearchFilter, OrderingFilter
