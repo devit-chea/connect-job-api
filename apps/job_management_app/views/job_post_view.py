@@ -4,6 +4,7 @@ from collections import defaultdict
 from django.db.models import (
     Count,
     OuterRef,
+    Prefetch,
     Subquery,
     IntegerField,
 )
@@ -52,6 +53,8 @@ from apps.job_management_app.filters.job_post_filters import JobPostByCompanyFil
 from apps.job_management_app.models.job_application_model import JobApplicationModel
 from apps.job_management_app.models.job_category_model import JobCategoryModel
 from apps.job_management_app.models.job_pipeline_config_model import JobPipelineConfigStepModel
+from apps.job_management_app.models.job_post_additional_field_model import JobPostAdditionalFieldModel
+from apps.job_management_app.models.job_post_assigned_recruiter_model import JobPostAssignedRecruiterModel
 from apps.job_management_app.models.job_post_model import JobPostModel
 from apps.job_management_app.models.job_question_model import JobPostQuestionModel
 from apps.job_management_app.serializers.job_application_serializer import (
@@ -80,6 +83,36 @@ from apps.job_management_app.services.job_application_services import (
 logger = logging.getLogger(__name__)
 
 
+def _job_post_list_queryset(qs):
+    """Apply the standard select_related + prefetch_related chain for list views."""
+    return (
+        qs
+        .select_related(
+            "company",
+            "job_category",
+            "job_location",
+            "job_pipeline_config",
+            "user_activity_count",
+        )
+        .prefetch_related(
+            Prefetch(
+                "additional_field",
+                queryset=JobPostAdditionalFieldModel.objects.filter(
+                    is_deleted=False
+                ).values("code", "name", "description", "field_name"),
+                to_attr="prefetched_additional_fields",
+            ),
+            Prefetch(
+                "job_post_assigned_recruiters",
+                queryset=JobPostAssignedRecruiterModel.objects.filter(
+                    is_deleted=False
+                ).select_related("assigned_ucp__profile"),
+                to_attr="prefetched_recruiters",
+            ),
+        )
+    )
+
+
 class ApplicantJobPostView(BaseReadOnlyViewSet):
     """
     Public/applicant-facing endpoints:
@@ -106,6 +139,9 @@ class ApplicantJobPostView(BaseReadOnlyViewSet):
         "save_job": JobPostSaveUnsaveWriteSerializer,
         "unsave_job": JobPostSaveUnsaveWriteSerializer,
     }
+
+    def get_queryset(self):
+        return _job_post_list_queryset(super().get_queryset())
 
     def get_serializer_class(self):
         return self.ACTION_SERIALIZERS.get(self.action, super().get_serializer_class())
@@ -259,7 +295,7 @@ class RecruiterJobPostView(PermissionMixin, BaseModelViewSet):
     ]
 
     def get_queryset(self):
-        qs = super().get_queryset()
+        qs = _job_post_list_queryset(super().get_queryset())
         ucp_id = self.request.query_params.get("created_by", None)
         if ucp_id:
             qs = qs.filter(create_ucp_id=ucp_id)
@@ -577,13 +613,15 @@ class CompanyJobPostListView(BaseListAPIView):
             return JobPostModel.objects.none()
         try:
             today = timezone.localdate()
-            return JobPostModel.objects.filter(
-                company_id=company_id,
-                is_deleted=False,
-                is_active=True,
-                status=JobPostStatusTypes.ACTIVE.value,
-                expire_date__gte=today,
-            ).order_by("-post_date")
+            return _job_post_list_queryset(
+                JobPostModel.objects.filter(
+                    company_id=company_id,
+                    is_deleted=False,
+                    is_active=True,
+                    status=JobPostStatusTypes.ACTIVE.value,
+                    expire_date__gte=today,
+                ).order_by("-post_date")
+            )
         except Exception as e:
             logger.error(f"Error filtering job posts: {e}")
             return JobPostModel.objects.none()
@@ -621,14 +659,13 @@ class RecruiterJobPostListView(BaseListAPIView):
 
     def _get_filtered_queryset(self, company_id, create_ucp_id):
         try:
-            queryset = (
+            queryset = _job_post_list_queryset(
                 JobPostModel.objects.filter(
                     company_id=company_id,
                     create_ucp_id=create_ucp_id,
                     is_deleted=False,
                     is_active=True,
-                )
-                .order_by("-post_date")
+                ).order_by("-post_date")
             )
             return queryset
         except Exception:
@@ -731,6 +768,9 @@ class JobPostCategoryListView(GenericAPIView):
 class OperatorJobPostView(PermissionMixin, BaseReadOnlyViewSet):
     queryset = JobPostModel.objects.exclude(status="DRAFT").order_by("-id")
     permission_codename = ["operator_manage_job_post"]
+
+    def get_queryset(self):
+        return _job_post_list_queryset(super().get_queryset())
 
     FIELDS = [
         "title",
