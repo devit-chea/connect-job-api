@@ -2,6 +2,7 @@ from django.contrib.auth.models import AnonymousUser
 from django.http import HttpRequest
 
 from auditlog.middleware import AuditlogMiddleware
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 
 from apps.auth_oauth.authentication import CustomJWTAuthentication
@@ -14,19 +15,28 @@ class JWTAuditlogMiddleware(AuditlogMiddleware):
     """
 
     def _authenticate_jwt(self, request: HttpRequest):
-        """Return authenticated user from JWT, or AnonymousUser"""
-        auth = CustomJWTAuthentication()
-        header = auth.get_header(request)
+        """
+        Resolve the JWT actor for audit logging.
+
+        Uses JWTAuthentication (base class) for token validation so the Redis
+        JTI revocation check is skipped here — it runs again in the DRF view
+        layer via CustomJWTAuthentication. Skipping it in this middleware saves
+        one Redis round-trip per request.
+        """
+        custom_auth = CustomJWTAuthentication()
+        header = custom_auth.get_header(request)
         if not header:
             return AnonymousUser()
 
-        raw_token = auth.get_raw_token(header)
+        raw_token = custom_auth.get_raw_token(header)
         if not raw_token:
             return AnonymousUser()
 
         try:
-            validated_token = auth.get_validated_token(raw_token)
-            return auth.get_user(validated_token)
+            # Signature + expiry check only — no Redis JTI lookup
+            base_auth = JWTAuthentication()
+            validated_token = base_auth.get_validated_token(raw_token)
+            return custom_auth.get_user(validated_token)
         except (InvalidToken, TokenError):
             return AnonymousUser()
 
