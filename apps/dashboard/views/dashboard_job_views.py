@@ -1,7 +1,8 @@
 from collections import defaultdict
 
 from django.core.exceptions import PermissionDenied
-from django.db.models import Count, Sum, Q
+from django.core.cache import cache
+from django.db.models import Case, Count, IntegerField, Sum, Q, When
 from django.utils import timezone
 from django_elasticsearch_dsl_drf.filter_backends import (
     FilteringFilterBackend,
@@ -129,6 +130,12 @@ class JobStatsView(
 
         _ = qp_serializer.validated_data
 
+        cache_key = f"dashboard_job_stats:{request.company_id}:{request.query_params.urlencode()}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+
+        today = timezone.localdate()
         qs = JobPostModel.objects.filter(company_id=request.company_id).exclude(
             status=JobPostStatusTypes.DRAFT.value
         )
@@ -138,22 +145,41 @@ class JobStatsView(
             queryset=qs, time_field="post_date"
         )
 
+        # Single DB round-trip replacing four separate .count() calls
+        stats = qs.aggregate(
+            total_jobs=Count("id"),
+            active_jobs=Count(
+                Case(
+                    When(status=JobPostStatusTypes.ACTIVE.value, expire_date__gte=today, then=1),
+                    output_field=IntegerField(),
+                )
+            ),
+            closed_jobs=Count(
+                Case(
+                    When(
+                        status=JobPostStatusTypes.ACTIVE.value,
+                        expire_date__isnull=False,
+                        expire_date__lt=today,
+                        then=1,
+                    ),
+                    output_field=IntegerField(),
+                )
+            ),
+            on_hold_jobs=Count(
+                Case(
+                    When(status=JobPostStatusTypes.INACTIVE.value, then=1),
+                    output_field=IntegerField(),
+                )
+            ),
+        )
+
         raw_data = {
-            "total_jobs": qs.count(),
-            "active_jobs": qs.filter(
-                status=JobPostStatusTypes.ACTIVE.value,
-                expire_date__gte=timezone.localdate(),
-            ).count(),
-            "closed_jobs": qs.filter(
-                status=JobPostStatusTypes.ACTIVE.value,
-                expire_date__isnull=False,
-                expire_date__lt=timezone.localdate(),
-            ).count(),
-            "on_hold_jobs": qs.filter(status=JobPostStatusTypes.INACTIVE.value).count(),
+            **stats,
             "month_comparison": month_comparison,
         }
         serializer = JobStatsResponseSerializer(raw_data)
         final_data = serializer.data
+        cache.set(cache_key, final_data, timeout=60)
 
         return Response(final_data)
 
