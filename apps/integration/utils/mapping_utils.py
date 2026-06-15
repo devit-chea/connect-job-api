@@ -58,7 +58,9 @@ def seed_default_field_mappings(partner) -> list:
 def _seed_category_value_mappings(partner) -> None:
     """
     Seeds the 9 standard job category value mappings under the 'category' field.
-    Idempotent — skips any target_value already present.
+    Each entry in DEFAULT_CATEGORY_VALUE_MAPPINGS provides a list of ERP labels
+    that all map to the same ConnectJob category; they are stored comma-joined.
+    Idempotent — skips any source_value already present.
     """
     from apps.integration.models.job_platform import (
         IntegrationFieldMapping,
@@ -74,19 +76,20 @@ def _seed_category_value_mappings(partner) -> None:
     if not category_mapping:
         return
 
-    existing_targets = set(
-        category_mapping.value_mappings.values_list("target_value", flat=True)
+    existing_sources = set(
+        category_mapping.value_mappings.values_list("source_value", flat=True)
     )
 
     to_create = []
-    for source_value, target_value in DEFAULT_CATEGORY_VALUE_MAPPINGS:
-        if target_value in existing_targets:
+    for source_value, target_values in DEFAULT_CATEGORY_VALUE_MAPPINGS:
+        if source_value in existing_sources:
             continue
+        stored = ",".join(v.strip() for v in target_values if v.strip())
         to_create.append(
             IntegrationValueMapping(
                 field_mapping=category_mapping,
                 source_value=source_value,
-                target_value=target_value,
+                target_value=stored,
             )
         )
 

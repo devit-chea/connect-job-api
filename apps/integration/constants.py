@@ -56,21 +56,19 @@ DEFAULT_FIELD_MAPPINGS = [
 ]
 
 # Pre-defined value mappings for the "category" field.
-# Each tuple: (source_value, target_value)
-#   source_value = ConnectJob job category name (what gets stored on the job post)
-#   target_value = ERP category name (what WingDigital sends in the payload)
-#
-# Both sides default to the same names so the mapping works out-of-the-box when
-# both platforms share the same taxonomy. Admins can update the target_value
-# dropdowns in the Data Mapping UI to match their ERP's actual category labels.
+# Each tuple: (source_value, [target_value, ...])
+#   source_value    = ConnectJob job category name (stored on the job post)
+#   [target_values] = list of ERP category labels that map to this category.
+#                     Stored as a single comma-separated string in the CharField.
+#                     Admins can extend or replace these via the Data Mapping UI.
 DEFAULT_CATEGORY_VALUE_MAPPINGS = [
-    ("Business & Management",       "Business & Management"),
-    ("Information Technology (IT)", "Information Technology (IT)"),
-    ("Engineering & Technical",     "Engineering & Technical"),
-    ("Education & Training",        "Education & Training"),
-    ("Sales & Marketing",           "Sales & Marketing"),
-    ("Customer Service & Support",  "Customer Service & Support"),
-    ("Finance & Accounting",        "Finance & Accounting"),
-    ("Legal & Compliance",          "Legal & Compliance"),
-    ("Healthcare & Medical",        "Healthcare & Medical"),
+    ("Business & Management",       ["Business & Management"]),
+    ("Information Technology (IT)", ["Information Technology (IT)"]),
+    ("Engineering & Technical",     ["Engineering & Technical"]),
+    ("Education & Training",        ["Education & Training"]),
+    ("Sales & Marketing",           ["Sales & Marketing"]),
+    ("Customer Service & Support",  ["Customer Service & Support"]),
+    ("Finance & Accounting",        ["Finance & Accounting"]),
+    ("Legal & Compliance",          ["Legal & Compliance"]),
+    ("Healthcare & Medical",        ["Healthcare & Medical"]),
 ]
