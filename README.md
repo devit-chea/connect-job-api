@@ -1,5 +1,11 @@
 # ConnectJob Platform API
 
+FROM user_company_profile ucp
+INNER JOIN auth_oauth_user u  ON u.id  = ucp.user_id
+INNER JOIN profile         p  ON p.id  = ucp.profile_id
+WHERE p.profile_type = 'applicant'
+ORDER BY p.create_date DESC;
+
 Backend REST API for the ConnectJob recruitment platform — built with Django 5, Django REST Framework, PostgreSQL, Redis, Elasticsearch, and Celery.
 
 ---
