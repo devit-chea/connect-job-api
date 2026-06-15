@@ -1,5 +1,26 @@
 # ConnectJob Platform API
 
+❯ select count
+
+SELECT COUNT(*) AS total_applicants
+FROM user_company_profile ucp
+INNER JOIN auth_oauth_user u ON u.id  = ucp.user_id
+INNER JOIN profile         p ON p.id  = ucp.profile_id
+WHERE p.profile_type = 'applicant';
+
+Or if you want a breakdown by status:
+
+SELECT
+    p.status,
+    COUNT(*) AS total
+FROM user_company_profile ucp
+INNER JOIN auth_oauth_user u ON u.id = ucp.user_id
+INNER JOIN profile         p ON p.id = ucp.profile_id
+WHERE p.profile_type = 'applicant'
+GROUP BY p.status
+ORDER BY total DESC;
+
+
 SELECT
     -- User
     u.id              AS user_id,
@@ -32,7 +53,7 @@ SELECT
     ucp.provider,
     ucp.state         AS ucp_state,
     ucp.company_id
-    
+
 FROM user_company_profile ucp
 INNER JOIN auth_oauth_user u  ON u.id  = ucp.user_id
 INNER JOIN profile         p  ON p.id  = ucp.profile_id
