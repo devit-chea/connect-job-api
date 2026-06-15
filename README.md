@@ -1,5 +1,38 @@
 # ConnectJob Platform API
 
+SELECT
+    -- User
+    u.id              AS user_id,
+    u.username,
+    u.email           AS user_email,
+    u.status          AS user_status,
+    u.is_active,
+    u.phone_number    AS user_phone,
+
+    -- Profile
+    p.id              AS profile_id,
+    p.full_name,
+    p.first_name,
+    p.last_name,
+    p.email           AS profile_email,
+    p.phone_number    AS profile_phone,
+    p.gender,
+    p.date_of_birth,
+    p.current_position,
+    p.profile_type,
+    p.status          AS profile_status,
+    p.is_active       AS profile_is_active,
+    p.create_date     AS profile_created_at,
+
+    -- UserCompanyProfile
+    ucp.id            AS ucp_id,
+    ucp.type          AS ucp_type,
+    ucp.status        AS ucp_status,
+    ucp.code,
+    ucp.provider,
+    ucp.state         AS ucp_state,
+    ucp.company_id
+    
 FROM user_company_profile ucp
 INNER JOIN auth_oauth_user u  ON u.id  = ucp.user_id
 INNER JOIN profile         p  ON p.id  = ucp.profile_id
