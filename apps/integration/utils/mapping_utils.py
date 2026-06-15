@@ -132,11 +132,15 @@ def transform_erp_payload(partner_id: str, erp_payload: dict) -> dict:
             continue
 
         if mapping.mapping_type == "mapped":
-            # Build ERP value → ConnectJob value lookup from nested value mappings
-            value_lookup = {
-                vm.target_value: vm.source_value
-                for vm in mapping.value_mappings.all()
-            }
+            # Build ERP label → ConnectJob value lookup.
+            # target_value may be a comma-separated list (e.g. category field),
+            # so each individual label is registered as a separate lookup key.
+            value_lookup = {}
+            for vm in mapping.value_mappings.all():
+                for label in vm.target_value.split(","):
+                    label = label.strip()
+                    if label:
+                        value_lookup[label] = vm.source_value
             connectjob_value = value_lookup.get(str(erp_value))
             if connectjob_value is None:
                 # No value mapping matched — use default_value if configured

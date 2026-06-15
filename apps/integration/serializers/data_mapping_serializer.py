@@ -17,6 +17,48 @@ class IntegrationValueMappingSerializer(serializers.ModelSerializer):
         }
 
 
+class CommaSeparatedTargetValueField(serializers.Field):
+    """
+    Accepts a list or a comma-separated string on write; always returns a list on read.
+    Used for category value mappings where one ConnectJob category maps to multiple ERP labels.
+    """
+
+    def to_internal_value(self, data):
+        if isinstance(data, list):
+            cleaned = [str(v).strip() for v in data if str(v).strip()]
+            if not cleaned:
+                raise serializers.ValidationError("At least one value is required.")
+            return ",".join(cleaned)
+        value = str(data).strip()
+        if not value:
+            raise serializers.ValidationError("This field may not be blank.")
+        return value
+
+    def to_representation(self, value):
+        if not value:
+            return []
+        return [v.strip() for v in value.split(",") if v.strip()]
+
+
+class CategoryValueMappingSerializer(serializers.ModelSerializer):
+    """
+    Value mapping serializer for the 'category' field.
+    target_value accepts a list of ERP category labels on write and returns a list on read.
+    Multiple labels are stored as a single comma-separated string in the CharField.
+    """
+
+    target_value = CommaSeparatedTargetValueField()
+
+    class Meta:
+        model = IntegrationValueMapping
+        fields = ["id", "source_value", "target_value", "created_at", "updated_at"]
+        extra_kwargs = {
+            "id": {"read_only": True},
+            "created_at": {"read_only": True},
+            "updated_at": {"read_only": True},
+        }
+
+
 class IntegrationValueMappingBulkSerializer(serializers.Serializer):
     """
     Bulk-create multiple ERP values that all map to the same ConnectJob value.

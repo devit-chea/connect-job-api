@@ -15,6 +15,7 @@ from apps.integration.models.job_platform import (
     MappingType,
 )
 from apps.integration.serializers.data_mapping_serializer import (
+    CategoryValueMappingSerializer,
     IntegrationFieldMappingSerializer,
     IntegrationFieldMappingWriteSerializer,
     IntegrationValueMappingBulkSerializer,
@@ -40,6 +41,13 @@ def _get_field_mapping(pk, company_id: str) -> IntegrationFieldMapping:
     if not mapping:
         raise NotFoundException("Field mapping not found.")
     return mapping
+
+
+def _value_mapping_serializer_class(field_mapping: IntegrationFieldMapping):
+    """Returns CategoryValueMappingSerializer for category fields, plain serializer otherwise."""
+    if field_mapping.source_field == "category":
+        return CategoryValueMappingSerializer
+    return IntegrationValueMappingSerializer
 
 
 class DataMappingListView(CustomJWTRequestMixin, APIView):
@@ -124,7 +132,8 @@ class ValueMappingListView(CustomJWTRequestMixin, APIView):
     def get(self, request, field_mapping_id):
         company_id = str(request.company_id)
         field_mapping = _get_field_mapping(field_mapping_id, company_id)
-        serializer = IntegrationValueMappingSerializer(
+        serializer_class = _value_mapping_serializer_class(field_mapping)
+        serializer = serializer_class(
             field_mapping.value_mappings.order_by("source_value", "target_value"),
             many=True,
         )
@@ -144,7 +153,8 @@ class ValueMappingListView(CustomJWTRequestMixin, APIView):
     # ── helpers ───────────────────────────────────────────────────────────────
 
     def _create_single(self, request, field_mapping):
-        serializer = IntegrationValueMappingSerializer(data=request.data)
+        serializer_class = _value_mapping_serializer_class(field_mapping)
+        serializer = serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         target_value = serializer.validated_data["target_value"]
@@ -158,7 +168,7 @@ class ValueMappingListView(CustomJWTRequestMixin, APIView):
             self._promote_if_free(field_mapping)
 
         return Response(
-            IntegrationValueMappingSerializer(vm).data,
+            serializer_class(vm).data,
             status=status.HTTP_201_CREATED,
         )
 
@@ -193,9 +203,10 @@ class ValueMappingListView(CustomJWTRequestMixin, APIView):
                 created.append(vm)
             self._promote_if_free(field_mapping)
 
+        serializer_class = _value_mapping_serializer_class(field_mapping)
         return Response(
             {
-                "created": IntegrationValueMappingSerializer(created, many=True).data,
+                "created": serializer_class(created, many=True).data,
                 "skipped": list(existing),
             },
             status=status.HTTP_201_CREATED,
@@ -261,7 +272,8 @@ class ValueMappingDetailView(CustomJWTRequestMixin, APIView):
     def patch(self, request, field_mapping_id, pk):
         company_id = str(request.company_id)
         vm = self._get_value_mapping(field_mapping_id, pk, company_id)
-        serializer = IntegrationValueMappingSerializer(vm, data=request.data, partial=True)
+        serializer_class = _value_mapping_serializer_class(vm.field_mapping)
+        serializer = serializer_class(vm, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
 
         new_target = serializer.validated_data.get("target_value")
@@ -272,7 +284,7 @@ class ValueMappingDetailView(CustomJWTRequestMixin, APIView):
                 )
 
         vm = serializer.save()
-        return Response(IntegrationValueMappingSerializer(vm).data)
+        return Response(serializer_class(vm).data)
 
     def delete(self, request, field_mapping_id, pk):
         company_id = str(request.company_id)
