@@ -1,5 +1,13 @@
 # ConnectJob Platform API
 
+SELECT COUNT(*) AS total_applicants
+FROM user_company_profile ucp
+INNER JOIN auth_oauth_user u ON u.id = ucp.user_id
+INNER JOIN profile         p ON p.id = ucp.profile_id
+WHERE p.profile_type = 'applicant'
+  AND p.create_date >= CURRENT_DATE
+  AND p.create_date <  CURRENT_DATE + INTERVAL '1 day';
+
 ❯ select count
 
 SELECT COUNT(*) AS total_applicants
