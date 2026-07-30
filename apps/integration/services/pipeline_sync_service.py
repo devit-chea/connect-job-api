@@ -40,10 +40,9 @@ class PipelineSyncService:
         payload = PipelineSyncService._build_payload(application, partner)
 
         try:
+            erp_base = (partner.erp_domain or settings.CONNECTOR_INTEGRATION_URL).rstrip("/")
             response = http_client.patch(
-                f"{settings.CONNECTOR_INTEGRATION_URL}"
-                f"/api/connector-integration/applications"
-                f"/{application.id}/pipeline",
+                f"{erp_base}/api/connector-integration/applications/{application.id}/pipeline",
                 json=payload,
                 headers={"X-CONNECTOR-KEY": partner.partner_inbound_key},
                 timeout=15,

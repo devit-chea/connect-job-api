@@ -73,8 +73,18 @@ class IntegrationExchangeView(CustomJWTRequestMixin, APIView):
 
             key_beta = f"job_outbound_{secrets.token_hex(32)}"
 
+            # Resolve the ERP domain from the company's integrate_domain so each
+            # company can connect to its own ERP instance (multi-tenant support).
+            from apps.base.models.company_model import Company
+            company = Company.objects.filter(pk=handshake.organization_id).first()
+            erp_domain = (
+                (company.integrate_domain or "").rstrip("/")
+                if company
+                else ""
+            ) or settings.CONNECTOR_INTEGRATION_URL.rstrip("/")
+
             erp_response = requests.post(
-                f"{settings.CONNECTOR_INTEGRATION_URL}/api/connector-integration/finalize",
+                f"{erp_domain}/api/connector-integration/finalize",
                 json={
                     "authorization_code": data["authorization_code"],
                     "temporary_code": data["temporary_code"],
@@ -82,7 +92,7 @@ class IntegrationExchangeView(CustomJWTRequestMixin, APIView):
                     "job_platform_org_id": handshake.organization_id,
                     "key_beta": key_beta,
                 },
-                # timeout=10,
+                timeout=10,
             )
 
             if erp_response.status_code != 200:
@@ -109,6 +119,7 @@ class IntegrationExchangeView(CustomJWTRequestMixin, APIView):
             partner = IntegrationPartner.objects.create(
                 organization_id=handshake.organization_id,
                 partner_tenant_id=erp_company_id,
+                erp_domain=erp_domain,
                 # ERP -> ConnectJob
                 partner_outbound_key=key_beta,
                 partner_outbound_hash=hash_sha256(key_beta),
@@ -138,6 +149,8 @@ class InitializeHandshakeView(CustomJWTRequestMixin, APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        from apps.base.models.company_model import Company
+
         organization_id = str(self.request.company_id)
 
         if IntegrationPartner.objects.filter(
@@ -149,6 +162,26 @@ class InitializeHandshakeView(CustomJWTRequestMixin, APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Resolve the ERP domain from the company's integrate_domain field.
+        # The company must have integrate_domain set before starting the handshake.
+        company = Company.objects.filter(pk=organization_id).first()
+        if not company:
+            return Response(
+                {"status": "error", "message": "Company not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        erp_domain = (company.integrate_domain or "").rstrip("/")
+        if not erp_domain:
+            return Response(
+                {
+                    "status": "error",
+                    "message": "Company does not have an ERP domain configured. "
+                               "Set integrate_domain on the company first.",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         IntegrationHandshake.objects.filter(organization_id=organization_id).delete()
 
         temporary_code = f"code_{secrets.token_hex(24)}"
@@ -156,7 +189,7 @@ class InitializeHandshakeView(CustomJWTRequestMixin, APIView):
         code_verifier = secrets.token_urlsafe(64)
         code_challenge = base64url_encode_sha256(code_verifier)
 
-        # After the user accepts on Wing Digital the browser is redirected here,
+        # After the user accepts on the ERP the browser is redirected here,
         # bringing them back to ConnectJob's integration tab with the result.
         redirect_uri = (
             f"{settings.WEB_BASE_URL}/recruiter/company/integration/callback"
@@ -181,8 +214,9 @@ class InitializeHandshakeView(CustomJWTRequestMixin, APIView):
             "code_challenge": code_challenge,
             "redirect_uri": redirect_uri,
         })
+        # Use the company's own ERP domain, not the global setting.
         authorize_url = (
-            f"{settings.CONNECTOR_INTEGRATION_URL}/api/oauth/authorize"
+            f"{erp_domain}/api/oauth/authorize"
             f"?{authorize_params}"
         )
 
@@ -194,6 +228,7 @@ class InitializeHandshakeView(CustomJWTRequestMixin, APIView):
                 "temporary_code": temporary_code,
                 "authorize_url": authorize_url,
                 "redirect_uri": redirect_uri,
+                "erp_domain": erp_domain,
             },
             status=status.HTTP_201_CREATED,
         )
@@ -247,8 +282,9 @@ class JobCategoryLookupView(CustomJWTRequestMixin, APIView):
             )
 
         try:
+            erp_base = (partner.erp_domain or settings.CONNECTOR_INTEGRATION_URL).rstrip("/")
             erp_response = requests.get(
-                f"{settings.CONNECTOR_INTEGRATION_URL}/api/connector-integration/categories",
+                f"{erp_base}/api/connector-integration/categories",
                 headers={"X-CONNECTOR-KEY": partner.partner_inbound_key},
                 timeout=10,
             )
@@ -298,7 +334,7 @@ class ErpUserLookupProxyView(CustomJWTRequestMixin, APIView):
         inbound_key = partner.partner_inbound_key
         erp_company_id = partner.partner_tenant_id
 
-        erp_api_url = f"{settings.CONNECTOR_INTEGRATION_URL}/api/connector-integration/users"
+        erp_api_url = f"{(partner.erp_domain or settings.CONNECTOR_INTEGRATION_URL).rstrip('/')}/api/connector-integration/users"
 
         try:
             erp_response = requests.get(
@@ -310,7 +346,7 @@ class ErpUserLookupProxyView(CustomJWTRequestMixin, APIView):
                     "company_id": erp_company_id,
                     "paging": True,
                 },
-                # timeout=10,
+                timeout=10,
             )
         except requests.RequestException as exc:
             return Response(

@@ -100,6 +100,9 @@ class JobApplicationModel(AbstractBaseModel, SoftDeleteModel):
             models.Index(fields=["pipeline_status"]),
             models.Index(fields=["pipeline_step_order", "pipeline_status_order"]),
             models.Index(fields=["create_ucp_id", "job_post", "is_deleted"]),
+            models.Index(fields=["profile_id"],              name="ja_profile_idx"),
+            models.Index(fields=["job_post_id", "is_deleted"],name="ja_job_deleted_idx"),
+            models.Index(fields=["apply_date"],              name="ja_apply_date_idx"),
         ]
 
     def __str__(self):

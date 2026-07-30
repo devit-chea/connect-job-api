@@ -109,3 +109,9 @@ class JobPostModel(AbstractBaseModel, SoftDeleteModel, AbstractBaseCompany):
     class Meta:
         db_table = "job_post"
         description = "Job Posting Model"
+        indexes = [
+            models.Index(fields=["company_id", "is_deleted", "status"], name="jp_company_deleted_status_idx"),
+            models.Index(fields=["company_id", "create_ucp_id"],         name="jp_company_ucp_idx"),
+            models.Index(fields=["expire_date"],                          name="jp_expire_date_idx"),
+            models.Index(fields=["create_date"],                          name="jp_create_date_idx"),
+        ]

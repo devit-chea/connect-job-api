@@ -131,6 +131,10 @@ class User(AbstractUser, AbstractBaseModel):
     class Meta:
         app_label = "auth_oauth"
         description = "User"
+        indexes = [
+            models.Index(fields=["email"],               name="user_email_idx"),
+            models.Index(fields=["status", "is_active"], name="user_status_active_idx"),
+        ]
 
     def has_perm(self, perm, obj=None, menu_path=None):
         return self._user_has_perm(self, perm, obj=obj, menu_path=menu_path)

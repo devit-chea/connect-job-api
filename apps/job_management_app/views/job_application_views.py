@@ -53,8 +53,10 @@ class JobApplicationView(BaseModelViewSet):
         if not user_id or not user_company_profile_id:
             return JobApplicationModel.objects.none()
 
-        queryset = queryset.filter(
-            create_uid=user_id, 
+        queryset = queryset.select_related(
+            "job_post", "pipeline_step", "pipeline_status", "profile"
+        ).filter(
+            create_uid=user_id,
             create_ucp_id=user_company_profile_id
         )
 
@@ -287,7 +289,7 @@ class RecruiterJobApplicationView(PermissionMixin, BaseModelViewSet):
         qs = (
             super()
             .get_queryset()
-            .select_related("job_post", "pipeline_step", "pipeline_status")
+            .select_related("job_post", "pipeline_step", "pipeline_status", "profile")
             .filter(is_deleted=False)
         )
 
@@ -361,7 +363,9 @@ class RecruiterJobListApplicantsView(PermissionMixin, BaseListAPIView):
 
     def list(self, request, *args, **kwargs):
         job_post_id = kwargs.get("job_post_id", None)
-        queryset = JobApplicationModel.objects.filter(job_post_id=job_post_id)
+        queryset = JobApplicationModel.objects.filter(
+            job_post_id=job_post_id
+        ).select_related("job_post", "pipeline_step", "pipeline_status", "profile")
         queryset = self.filter_queryset(queryset)
 
         page = self.paginate_queryset(queryset)

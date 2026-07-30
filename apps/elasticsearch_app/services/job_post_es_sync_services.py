@@ -92,27 +92,46 @@ class JobPostESSyncServices:
         Returns:
             None
         """
+        from elasticsearch.helpers import bulk as es_bulk
+        from elasticsearch_dsl.connections import connections
         from elasticsearch.exceptions import ElasticsearchException
 
-        # Assuming JobPostDocument is your Elasticsearch DSL Document class
         doc = JobPostDocument()
+        index_name = JobPostDocument.Index.name
 
-        for job_post in job_posts:
-            try:
+        def _iter_actions():
+            for job_post in job_posts:
                 if fields:
-                    # Build partial update document for fields
                     partial_doc = build_es_partial_update_doc(doc, job_post, fields)
-                    partial_update_es_document(
-                        index="job_post_index",
-                        doc_id=job_post.id,
-                        doc_data=partial_doc,
-                    )
+                    yield {
+                        "_op_type": "update",
+                        "_index": index_name,
+                        "_id": job_post.id,
+                        "doc": partial_doc,
+                        "doc_as_upsert": True,
+                    }
                 else:
-                    # Full update of the document in ES
-                    doc.update(job_post)
-            except ElasticsearchException as e:
-                logger.error(f"[ES Sync] Failed to sync JobPost(id={job_post.id}): {e}", exc_info=True)
-                # Optionally, you could collect failures to retry or raise here
+                    yield {
+                        "_op_type": "index",
+                        "_index": index_name,
+                        "_id": job_post.id,
+                        "_source": doc.prepare(job_post),
+                    }
+
+        try:
+            success, errors = es_bulk(
+                connections.get_connection(),
+                _iter_actions(),
+                chunk_size=500,
+                raise_on_error=False,
+            )
+            if errors:
+                logger.error("[ES Sync] Bulk sync had %d error(s): %s", len(errors), errors[:5])
+            else:
+                logger.info("[ES Sync] Bulk sync complete: %d documents updated.", success)
+        except ElasticsearchException as e:
+            logger.error("[ES Sync] Bulk sync failed: %s", e, exc_info=True)
+            raise
 
     @classmethod
     def sync_related_instance(cls, instance) -> None:

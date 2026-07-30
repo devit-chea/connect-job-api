@@ -52,6 +52,18 @@ def sync_pipeline_to_erp(self, application_id: int) -> None:
                 "sync_pipeline_to_erp: all retries exhausted application_id=%s",
                 application_id,
             )
+            try:
+                from apps.integration.models.job_platform import IntegrationSyncLog, SyncLogType, SyncLogStatus
+                IntegrationSyncLog.objects.create(
+                    sync_type=SyncLogType.PIPELINE_OUTBOUND,
+                    status=SyncLogStatus.FAILED,
+                    reference_id=str(application_id),
+                    payload={"application_id": application_id},
+                    error_message=str(exc),
+                    retry_count=self.max_retries,
+                )
+            except Exception as log_exc:
+                logger.warning("sync_pipeline_to_erp: could not write sync log error=%s", log_exc)
 
 
 @shared_task(
@@ -150,3 +162,15 @@ def sync_applicant_to_erp(self, application_id: int) -> None:
                 "sync_applicant_to_erp: all retries exhausted application_id=%s",
                 application_id,
             )
+            try:
+                from apps.integration.models.job_platform import IntegrationSyncLog, SyncLogType, SyncLogStatus
+                IntegrationSyncLog.objects.create(
+                    sync_type=SyncLogType.APPLICANT_OUTBOUND,
+                    status=SyncLogStatus.FAILED,
+                    reference_id=str(application_id),
+                    payload={"application_id": application_id},
+                    error_message=str(exc),
+                    retry_count=self.max_retries,
+                )
+            except Exception as log_exc:
+                logger.warning("sync_applicant_to_erp: could not write sync log error=%s", log_exc)

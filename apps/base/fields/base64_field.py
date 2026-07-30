@@ -1,4 +1,4 @@
-import base64, uuid, imghdr, six
+import base64, uuid, six
 from django.core.files.base import ContentFile
 from rest_framework import serializers
 import binascii
@@ -33,9 +33,20 @@ class Base64ImageField(serializers.ImageField):
         return super(Base64ImageField, self).to_internal_value(data)
 
     def get_file_extension(self, file_name, decoded_file):
-        extension = imghdr.what(file_name, decoded_file)
-        extension = "jpg" if extension == "jpeg" else extension
-
+        # imghdr was removed in Python 3.13; detect image type from magic bytes
+        header = decoded_file[:16] if decoded_file else b""
+        if header[:3] == b"\xff\xd8\xff":
+            extension = "jpg"
+        elif header[:8] == b"\x89PNG\r\n\x1a\n":
+            extension = "png"
+        elif header[:6] in (b"GIF87a", b"GIF89a"):
+            extension = "gif"
+        elif header[:4] == b"RIFF" and header[8:12] == b"WEBP":
+            extension = "webp"
+        elif header[:2] in (b"BM",):
+            extension = "bmp"
+        else:
+            extension = "jpg"
         return extension
 
     def to_representation(self, value):

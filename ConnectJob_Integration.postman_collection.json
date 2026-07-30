@@ -2,26 +2,99 @@
   "info": {
     "name": "ConnectJob — Integration Feature",
     "_postman_id": "connectjob-integration-v1",
-    "description": "Full collection for the ConnectJob ↔ WingDigital ERP integration feature.\n\n**Setup:**\n1. Set `base_url` to your server (e.g. `http://localhost:8000`)\n2. Login and paste the JWT into `jwt_token`\n3. Paste Key_Beta (outbound key) into `connector_key` for ERP-side calls\n\n**Folders:**\n- Auth — get a token\n- Integration Lifecycle — handshake, exchange, disconnect, category/user lookups\n- Data Mapping — field + value mapping CRUD (19 field defaults + 9 category value defaults auto-seeded on connect)\n- Inbound Job Posting — ERP posts a job vacancy (payload auto-transformed via mappings)\n- Recruiter Integration Tab — company integration settings\n- Operator (Admin) Company — admin company management with integration tab\n\n**Category mapping defaults (seeded automatically on connect):**\nJob Category field: default_value = 'Other' (unknown ERP categories fall back to Other)\n9 pre-seeded value mappings: Business & Management, IT, Engineering & Technical, Education & Training, Sales & Marketing, Customer Service & Support, Finance & Accounting, Legal & Compliance, Healthcare & Medical",
+    "description": "Full collection for the ConnectJob ↔ WingDigital ERP integration feature.\n\n**Setup:**\n1. Set `base_url` to your server (e.g. `http://localhost:8000`)\n2. Login and paste the JWT into `jwt_token`\n3. Paste Key_Beta (outbound key) into `connector_key` for ERP-side calls\n\n**Folders:**\n- Auth — get a token\n- Integration Lifecycle — handshake, exchange, disconnect, category/user lookups\n- Data Mapping — field + value mapping CRUD (19 field defaults + 9 category value defaults auto-seeded on connect)\n- Inbound Job Posting — ERP posts a job vacancy (payload auto-transformed via mappings)\n- Recruiter Integration Tab — company integration settings\n- Operator — Link User to WingDigital — link an ERP user to a ConnectJob UserCompanyProfile (one user, many companies)\n- Operator (Admin) Company — admin company management with integration tab\n\n**Category mapping defaults (seeded automatically on connect):**\nJob Category field: default_value = 'Other' (unknown ERP categories fall back to Other)\n9 pre-seeded value mappings: Business & Management, IT, Engineering & Technical, Education & Training, Sales & Marketing, Customer Service & Support, Finance & Accounting, Legal & Compliance, Healthcare & Medical",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "base_url",         "value": "http://localhost:8000",  "type": "string" },
-    { "key": "jwt_token",        "value": "",                       "type": "string", "description": "Bearer token from login" },
-    { "key": "connector_key",    "value": "",                       "type": "string", "description": "Key_Beta — ERP outbound key for inbound ERP calls" },
-    { "key": "field_mapping_id", "value": "",                       "type": "string", "description": "UUID of an IntegrationFieldMapping" },
-    { "key": "value_mapping_id", "value": "",                       "type": "string", "description": "UUID of an IntegrationValueMapping" },
-    { "key": "company_id",       "value": "",                       "type": "string", "description": "Operator company ID (integer)" },
-    { "key": "code_verifier",    "value": "",                       "type": "string", "description": "Stored after /initialize response" },
-    { "key": "temporary_code",   "value": "",                       "type": "string", "description": "Stored after /initialize response" },
-    { "key": "state",            "value": "",                       "type": "string", "description": "Stored after /initialize response" }
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string",
+      "description": "Bearer token from login"
+    },
+    {
+      "key": "connector_key",
+      "value": "",
+      "type": "string",
+      "description": "Key_Beta — ERP outbound key for inbound ERP calls"
+    },
+    {
+      "key": "field_mapping_id",
+      "value": "",
+      "type": "string",
+      "description": "UUID of an IntegrationFieldMapping"
+    },
+    {
+      "key": "value_mapping_id",
+      "value": "",
+      "type": "string",
+      "description": "UUID of an IntegrationValueMapping"
+    },
+    {
+      "key": "company_id",
+      "value": "",
+      "type": "string",
+      "description": "Operator company ID (integer)"
+    },
+    {
+      "key": "code_verifier",
+      "value": "",
+      "type": "string",
+      "description": "Stored after /initialize response"
+    },
+    {
+      "key": "temporary_code",
+      "value": "",
+      "type": "string",
+      "description": "Stored after /initialize response"
+    },
+    {
+      "key": "state",
+      "value": "",
+      "type": "string",
+      "description": "Stored after /initialize response"
+    },
+    {
+      "key": "erp_user_id",
+      "value": "",
+      "type": "string",
+      "description": "ERP's own user ID, picked from 'Lookup ERP Users' response — becomes IntegrationUserMapping.partner_user_id"
+    },
+    {
+      "key": "recruiter_email",
+      "value": "recruiter@example.com",
+      "type": "string",
+      "description": "Email for the ConnectJob User created/linked to the ERP user"
+    },
+    {
+      "key": "recruiter_ucp_id",
+      "value": "",
+      "type": "string",
+      "description": "Set from response — UserCompanyProfile.id created by 'Link ERP User to Recruiter'"
+    },
+    {
+      "key": "admin_user_id",
+      "value": "",
+      "type": "string",
+      "description": "Set from response — User.id created by 'Create Admin User (with WingDigital Link)'"
+    }
   ],
   "auth": {
     "type": "bearer",
-    "bearer": [{ "key": "token", "value": "{{jwt_token}}", "type": "string" }]
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
   },
   "item": [
-
     {
       "name": "Auth",
       "description": "Obtain a JWT token. Paste the access token into the `jwt_token` collection variable.",
@@ -30,13 +103,30 @@
           "name": "Login",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "auth": { "type": "noauth" },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
             "body": {
               "mode": "raw",
               "raw": "{\n  \"username\": \"admin@example.com\",\n  \"password\": \"password123\"\n}"
             },
-            "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api", "auth", "login"] }
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
           },
           "event": [
             {
@@ -54,21 +144,35 @@
         }
       ]
     },
-
     {
       "name": "Integration Lifecycle",
       "description": "PKCE handshake flow to establish the connection between ConnectJob and WingDigital ERP.",
       "item": [
-
         {
           "name": "1. Initialize Handshake",
           "request": {
             "method": "POST",
             "header": [],
-            "body": { "mode": "raw", "raw": "{}", "options": { "raw": { "language": "json" } } },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{base_url}}/api/v1/integration/initialize",
-              "host": ["{{base_url}}"], "path": ["api", "v1", "integration", "initialize"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "integration",
+                "initialize"
+              ]
             },
             "description": "Called by the ConnectJob frontend (JWT required).\nReturns: authorize_url (redirect browser here), code_verifier, state, temporary_code.\nStore code_verifier and state in sessionStorage — needed for step 3."
           },
@@ -87,44 +191,78 @@
             }
           ]
         },
-
         {
           "name": "2. Exchange (complete handshake)",
           "request": {
             "method": "POST",
             "header": [
-              { "key": "X-Code-Verifier", "value": "{{code_verifier}}" }
+              {
+                "key": "X-Code-Verifier",
+                "value": "{{code_verifier}}"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"temporary_code\": \"{{temporary_code}}\",\n  \"state\": \"{{state}}\",\n  \"authorization_code\": \"<authorization_code_from_erp_callback>\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{base_url}}/api/v1/integration/exchange",
-              "host": ["{{base_url}}"], "path": ["api", "v1", "integration", "exchange"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "integration",
+                "exchange"
+              ]
             },
             "description": "Called by ConnectJob frontend after browser returns from WingDigital.\nRequires JWT + X-Code-Verifier header (from sessionStorage).\nOn success, creates IntegrationPartner + seeds 19 default field mappings.\nReturns: { status: 'success', message: 'Integration connected successfully.' }"
           }
         },
-
         {
           "name": "3. Disconnect (ERP-initiated)",
           "request": {
             "method": "POST",
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "header": [
-              { "key": "X-CONNECTOR-KEY", "value": "{{connector_key}}", "description": "Key_Beta — ERP outbound key" }
+              {
+                "key": "X-CONNECTOR-KEY",
+                "value": "{{connector_key}}",
+                "description": "Key_Beta — ERP outbound key"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{}", "options": { "raw": { "language": "json" } } },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{base_url}}/api/v1/integration/disconnect",
-              "host": ["{{base_url}}"], "path": ["api", "v1", "integration", "disconnect"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "integration",
+                "disconnect"
+              ]
             },
             "description": "Called server-to-server by WingDigital ERP when user clicks 'Disconnect'.\nAuth: X-CONNECTOR-KEY header with Key_Beta value.\nSets IntegrationPartner.status = 'disconnected' (soft delete).\nReturns: { status: 'success', message: 'ConnectJob integration disconnected.' }"
           }
         },
-
         {
           "name": "4. Disconnect (ConnectJob-initiated)",
           "request": {
@@ -132,12 +270,19 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/recruiter/company/integration",
-              "host": ["{{base_url}}"], "path": ["api", "recruiter", "company", "integration"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "recruiter",
+                "company",
+                "integration"
+              ]
             },
             "description": "Called by a ConnectJob recruiter clicking Disconnect on the Integration tab.\nJWT required. Notifies WingDigital ERP best-effort, then marks partner disconnected.\nReturns: { status: 'success', message: 'Integration disconnected.' }"
           }
         },
-
         {
           "name": "Lookup ERP Users (proxy)",
           "request": {
@@ -145,12 +290,20 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/integration/look_up/users",
-              "host": ["{{base_url}}"], "path": ["api", "v1", "integration", "look_up", "users"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "integration",
+                "look_up",
+                "users"
+              ]
             },
             "description": "Proxy call — ConnectJob frontend triggers this; ConnectJob calls WingDigital server-to-server using Key_Alpha. Returns the list of ERP users for the connected company."
           }
         },
-
         {
           "name": "Lookup Categories — ConnectJob (Source Value)",
           "request": {
@@ -158,8 +311,16 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/integration/look_up/categories",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "integration", "look_up", "categories"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "integration",
+                "look_up",
+                "categories"
+              ],
               "query": [
                 {
                   "key": "side",
@@ -172,7 +333,6 @@
             "description": "Returns ConnectJob job categories (id, name, code) from JobCategoryModel.\nUsed by the Data Mapping UI to populate the **Source Value** dropdown for the 'category' field.\n\nResponse:\n{\n  \"data\": [\n    { \"id\": 1, \"name\": \"Business & Management\", \"code\": \"\" },\n    { \"id\": 2, \"name\": \"Information Technology (IT)\", \"code\": \"\" },\n    ...\n  ]\n}"
           }
         },
-
         {
           "name": "Lookup Categories — ERP (Target Value)",
           "request": {
@@ -180,8 +340,16 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/integration/look_up/categories?side=erp",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "integration", "look_up", "categories"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "integration",
+                "look_up",
+                "categories"
+              ],
               "query": [
                 {
                   "key": "side",
@@ -194,15 +362,12 @@
             "description": "Proxies to WingDigital ERP using Key_Alpha (X-CONNECTOR-KEY) to fetch the ERP's own category list.\nUsed by the Data Mapping UI to populate the **Target Value** dropdown for the 'category' field.\nReturns 404 if no active integration exists for the company."
           }
         }
-
       ]
     },
-
     {
       "name": "Data Mapping",
       "description": "Configure field-level and value-level mappings between WingDigital fields and ConnectJob fields.\nAll endpoints require JWT (recruiter of the connected company).\n\n**Auto-seeded on connect:**\n- 19 field mappings (title←position, category←job_category with default='Other', salary_min←min_salary, etc.)\n- 9 job category value mappings under 'category' field (Business & Management, IT, Engineering & Technical, etc.)\n\n**Category lookup endpoints** (for populating dropdowns in the UI):\n- GET /look_up/categories → ConnectJob categories (Source Value dropdown)\n- GET /look_up/categories?side=erp → ERP categories via proxy (Target Value dropdown)",
       "item": [
-
         {
           "name": "List Field Mappings",
           "request": {
@@ -210,12 +375,19 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/integration/data-mapping",
-              "host": ["{{base_url}}"], "path": ["api", "v1", "integration", "data-mapping"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "integration",
+                "data-mapping"
+              ]
             },
             "description": "Returns all active field mappings for the company's integration, ordered by source_field.\nEach row includes nested value_mappings array."
           }
         },
-
         {
           "name": "Create Field Mapping",
           "request": {
@@ -224,11 +396,23 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"source_field\": \"title\",\n  \"target_field\": \"position\",\n  \"mapping_type\": \"free\",\n  \"default_value\": null,\n  \"is_active\": true\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{base_url}}/api/v1/integration/data-mapping",
-              "host": ["{{base_url}}"], "path": ["api", "v1", "integration", "data-mapping"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "integration",
+                "data-mapping"
+              ]
             },
             "description": "source_field: ConnectJob field name (must match InboundJobPostSerializer field)\ntarget_field: WingDigital ERP field name\nmapping_type: 'free' (direct copy) or 'mapped' (has value-level mappings)\ndefault_value: used when ERP omits this field"
           },
@@ -245,7 +429,6 @@
             }
           ]
         },
-
         {
           "name": "Update Field Mapping",
           "request": {
@@ -254,15 +437,27 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"target_field\": \"job_title\",\n  \"default_value\": null\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{base_url}}/api/v1/integration/data-mapping/{{field_mapping_id}}",
-              "host": ["{{base_url}}"], "path": ["api", "v1", "integration", "data-mapping", "{{field_mapping_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "integration",
+                "data-mapping",
+                "{{field_mapping_id}}"
+              ]
             }
           }
         },
-
         {
           "name": "Delete Field Mapping",
           "request": {
@@ -270,30 +465,53 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/integration/data-mapping/{{field_mapping_id}}",
-              "host": ["{{base_url}}"], "path": ["api", "v1", "integration", "data-mapping", "{{field_mapping_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "integration",
+                "data-mapping",
+                "{{field_mapping_id}}"
+              ]
             }
           }
         },
-
         {
           "name": "Restore Default Mappings",
           "request": {
             "method": "POST",
             "header": [],
-            "body": { "mode": "raw", "raw": "{}", "options": { "raw": { "language": "json" } } },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{base_url}}/api/v1/integration/data-mapping/restore-defaults",
-              "host": ["{{base_url}}"], "path": ["api", "v1", "integration", "data-mapping", "restore-defaults"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "integration",
+                "data-mapping",
+                "restore-defaults"
+              ]
             },
             "description": "Re-applies the 19 pre-defined default field mappings.\nOnly adds MISSING defaults — never overwrites existing customised mappings.\nReturns: { added: [...], message: '...' }"
           }
         },
-
         {
           "name": "Value Mappings",
           "description": "Manage value-level mappings within a field (for enum/choice fields).\nMany ERP values can map to one ConnectJob value (many-to-one).\nConstraint: each ERP value (target_value) must be unique per field.",
           "item": [
-
             {
               "name": "List Value Mappings",
               "request": {
@@ -301,11 +519,20 @@
                 "header": [],
                 "url": {
                   "raw": "{{base_url}}/api/v1/integration/data-mapping/{{field_mapping_id}}/values",
-                  "host": ["{{base_url}}"], "path": ["api", "v1", "integration", "data-mapping", "{{field_mapping_id}}", "values"]
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "integration",
+                    "data-mapping",
+                    "{{field_mapping_id}}",
+                    "values"
+                  ]
                 }
               }
             },
-
             {
               "name": "Add Single Value Mapping",
               "request": {
@@ -314,11 +541,25 @@
                 "body": {
                   "mode": "raw",
                   "raw": "{\n  \"source_value\": \"Accounting\",\n  \"target_value\": \"Finance\"\n}",
-                  "options": { "raw": { "language": "json" } }
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
                 },
                 "url": {
                   "raw": "{{base_url}}/api/v1/integration/data-mapping/{{field_mapping_id}}/values",
-                  "host": ["{{base_url}}"], "path": ["api", "v1", "integration", "data-mapping", "{{field_mapping_id}}", "values"]
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "integration",
+                    "data-mapping",
+                    "{{field_mapping_id}}",
+                    "values"
+                  ]
                 },
                 "description": "source_value: ConnectJob category/value\ntarget_value: ERP category/value\nAuto-promotes field mapping_type to 'mapped'."
               },
@@ -335,7 +576,6 @@
                 }
               ]
             },
-
             {
               "name": "Add Bulk Value Mappings (many-to-one)",
               "request": {
@@ -344,16 +584,29 @@
                 "body": {
                   "mode": "raw",
                   "raw": "{\n  \"source_value\": \"Accounting\",\n  \"target_values\": [\"Finance\", \"Accounting\", \"Tax\", \"Auditor\"]\n}",
-                  "options": { "raw": { "language": "json" } }
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
                 },
                 "url": {
                   "raw": "{{base_url}}/api/v1/integration/data-mapping/{{field_mapping_id}}/values",
-                  "host": ["{{base_url}}"], "path": ["api", "v1", "integration", "data-mapping", "{{field_mapping_id}}", "values"]
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "integration",
+                    "data-mapping",
+                    "{{field_mapping_id}}",
+                    "values"
+                  ]
                 },
                 "description": "Maps multiple ERP values to one ConnectJob category in one request.\nExisting ERP values are skipped (idempotent).\nReturns: { created: [...], skipped: [...] }"
               }
             },
-
             {
               "name": "Update Value Mapping",
               "request": {
@@ -362,15 +615,29 @@
                 "body": {
                   "mode": "raw",
                   "raw": "{\n  \"target_value\": \"financial_accounting\"\n}",
-                  "options": { "raw": { "language": "json" } }
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
                 },
                 "url": {
                   "raw": "{{base_url}}/api/v1/integration/data-mapping/{{field_mapping_id}}/values/{{value_mapping_id}}",
-                  "host": ["{{base_url}}"], "path": ["api", "v1", "integration", "data-mapping", "{{field_mapping_id}}", "values", "{{value_mapping_id}}"]
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "integration",
+                    "data-mapping",
+                    "{{field_mapping_id}}",
+                    "values",
+                    "{{value_mapping_id}}"
+                  ]
                 }
               }
             },
-
             {
               "name": "Delete Value Mapping",
               "request": {
@@ -378,53 +645,79 @@
                 "header": [],
                 "url": {
                   "raw": "{{base_url}}/api/v1/integration/data-mapping/{{field_mapping_id}}/values/{{value_mapping_id}}",
-                  "host": ["{{base_url}}"], "path": ["api", "v1", "integration", "data-mapping", "{{field_mapping_id}}", "values", "{{value_mapping_id}}"]
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "integration",
+                    "data-mapping",
+                    "{{field_mapping_id}}",
+                    "values",
+                    "{{value_mapping_id}}"
+                  ]
                 },
                 "description": "Deleting the last value mapping auto-demotes the field back to mapping_type='free'."
               }
             }
-
           ]
         }
-
       ]
     },
-
     {
       "name": "Inbound Job Posting (ERP → ConnectJob)",
       "description": "WingDigital ERP posts job vacancies to ConnectJob.\nAuth: X-CONNECTOR-KEY header with Key_Beta (ERP outbound key).\nPayload uses ERP field names — the system auto-transforms them using configured field mappings.",
       "item": [
-
         {
           "name": "Publish Job from ERP",
           "request": {
             "method": "POST",
-            "auth": { "type": "noauth" },
+            "auth": {
+              "type": "noauth"
+            },
             "header": [
-              { "key": "X-CONNECTOR-KEY", "value": "{{connector_key}}", "description": "Key_Beta — ERP outbound key" },
-              { "key": "Content-Type",    "value": "application/json" }
+              {
+                "key": "X-CONNECTOR-KEY",
+                "value": "{{connector_key}}",
+                "description": "Key_Beta — ERP outbound key"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"position\": \"Senior Software Engineer\",\n  \"job_code\": \"JD-2026-001\",\n  \"description\": \"We are looking for a senior engineer...\",\n  \"requirements\": \"5+ years experience in Python and Django.\",\n  \"responsibilities\": \"Build and maintain backend services.\",\n  \"benefits\": \"Health insurance, remote work options.\",\n  \"job_category\": \"IT\",\n  \"job_level\": \"Senior\",\n  \"job_type\": \"Full Time\",\n  \"employment_type\": \"Permanent\",\n  \"remote_type\": \"Hybrid\",\n  \"department_code\": \"Phnom Penh\",\n  \"min_salary\": 1500,\n  \"max_salary\": 3000,\n  \"salary_type\": \"RANGE\",\n  \"currency\": \"USD\",\n  \"no_of_positions\": 2,\n  \"expire_date\": \"2026-12-31\",\n  \"experience_years\": \"3-5 years\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{base_url}}/api/v1/integration/jobs/publish",
-              "host": ["{{base_url}}"], "path": ["api", "v1", "integration", "jobs", "publish"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "integration",
+                "jobs",
+                "publish"
+              ]
             },
             "description": "ERP field names are transformed via the configured data mappings:\n  position → title\n  job_category → category (with value mapping: IT → IT)\n  min_salary + max_salary → salary_range (NumericRange)\n  currency → salary_currency\n  department_code → location\n  job_type → time_type\n  employment_type → contract_type\n  no_of_positions → hire_no\n  experience_years → year_of_experience\n\nReturns: { status: 'success', job_post_id: '<uuid>' }"
           }
         }
-
       ]
     },
-
     {
       "name": "Recruiter Integration Tab",
       "description": "Recruiter manages their company's integration settings.\nAll endpoints require JWT. Company is resolved from the JWT's company_id claim.",
       "item": [
-
         {
           "name": "Get Integration Tab",
           "request": {
@@ -432,12 +725,19 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/recruiter/company/integration",
-              "host": ["{{base_url}}"], "path": ["api", "recruiter", "company", "integration"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "recruiter",
+                "company",
+                "integration"
+              ]
             },
             "description": "Returns:\n  integrate_domain: the configured ERP domain\n  is_integrate: whether company was imported from ERP\n  integration: null (no domain) | { is_connected, partner_tenant_id, status, connected_at }"
           }
         },
-
         {
           "name": "Save Integration Domain",
           "request": {
@@ -446,16 +746,27 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"integrate_domain\": \"https://wingdigital.com\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{base_url}}/api/recruiter/company/integration",
-              "host": ["{{base_url}}"], "path": ["api", "recruiter", "company", "integration"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "recruiter",
+                "company",
+                "integration"
+              ]
             },
             "description": "Saves the integrate_domain on the company. Call this before /initialize.\nis_integrate is read-only and cannot be set here."
           }
         },
-
         {
           "name": "Disconnect (ConnectJob-initiated)",
           "request": {
@@ -463,20 +774,220 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/recruiter/company/integration",
-              "host": ["{{base_url}}"], "path": ["api", "recruiter", "company", "integration"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "recruiter",
+                "company",
+                "integration"
+              ]
             },
             "description": "Recruiter disconnects from WingDigital.\nBest-effort notifies ERP, then marks IntegrationPartner.status = 'disconnected'."
           }
         }
-
       ]
     },
-
+    {
+      "name": "Operator — Link User to WingDigital (UserCompanyProfile)",
+      "description": "Links a WingDigital ERP user to a ConnectJob UserCompanyProfile (one company membership for one user). Since a ConnectJob user can belong to multiple companies (UserCompanyProfile per company), the ERP identity is pinned to the specific UserCompanyProfile via IntegrationUserMapping.user_company_profile — not to the raw user/profile — so it never collides across companies.\n\nFlow:\n1. Connect the company to WingDigital (creates the IntegrationPartner) — skip if already connected.\n2. Lookup ERP users for the company and pick one (erp_user_id).\n3. Link that ERP user to a new/updated ConnectJob recruiter — creates User + Profile + UserCompanyProfile and writes IntegrationUserMapping with partner_user_id pre-populated.",
+      "item": [
+        {
+          "name": "1. Operator Connect ERP (establish integration)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"erp_domain\": \"https://wingdigital-demo.example.com\",\n  \"company_id\": \"{{company_id}}\",\n  \"company_name\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/integration/operator/connect",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "integration",
+                "operator",
+                "connect"
+              ]
+            },
+            "description": "Requires JWT + operator_manage_company permission.\nGenerates Key_Beta, calls WingDigital's /api/connector-integration/operator-connect, then creates the IntegrationPartner row for company_id and seeds default field mappings.\n\nSkip this request if the company already has an active integration (check via 'Lookup Company by Domain' in the Integration Lifecycle folder)."
+          },
+          "response": []
+        },
+        {
+          "name": "2. Lookup ERP Users (pick erp_user_id)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/integration/look_up/users",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "integration",
+                "look_up",
+                "users"
+              ]
+            },
+            "description": "Requires JWT only (operator's own company_id claim is used to resolve the IntegrationPartner). ConnectJob calls WingDigital server-to-server with Key_Alpha and proxies back the ERP's user list. Copy the id of the user you want to link into the `erp_user_id` collection variable."
+          },
+          "response": []
+        },
+        {
+          "name": "3. Link ERP User to Recruiter (creates UserCompanyProfile)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"erp_user_id\": \"{{erp_user_id}}\",\n  \"email\": \"{{recruiter_email}}\",\n  \"first_name\": \"Sokha\",\n  \"last_name\": \"Chan\",\n  \"phone_number\": \"+85512345678\",\n  \"role_type\": \"admin_recruiter\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/integration/operator/companies/{{company_id}}/recruiter",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "integration",
+                "operator",
+                "companies",
+                "{{company_id}}",
+                "recruiter"
+              ]
+            },
+            "description": "Requires JWT + operator_manage_user permission. company_id must have an ACTIVE IntegrationPartner (see request 1).\n\nrole_type: 'admin_recruiter' or 'recruiter'.\n\nBehaviour:\n1. Resolves an existing active User by email, or creates one.\n2. Resolves or creates that User's Profile.\n3. Rejects with 400 if a UserCompanyProfile already exists for this user + company (one ERP user maps to exactly one UserCompanyProfile per company).\n4. Creates the UserCompanyProfile (this is the specific 'this user, at this company' membership record).\n5. Writes IntegrationUserMapping(connection=partner, user_company_profile=<new ucp>, partner_user_id=erp_user_id) immediately — no need to wait on the async recruiter-sync task since the ERP id is already known here.\n\nReturns user_id, profile_id and ucp_id — save ucp_id into `recruiter_ucp_id` for use in Job Management requests (e.g. filtering 'my job posts' by create_ucp_id)."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.ucp_id) { pm.collectionVariables.set('recruiter_ucp_id', json.ucp_id); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "4. Create Admin User via OperatorUserView (multi-company, WingDigital link)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{recruiter_email}}\",\n  \"email\": \"{{recruiter_email}}\",\n  \"first_name\": \"Sokha\",\n  \"last_name\": \"Chan\",\n  \"is_active\": true,\n  \"password\": \"\",\n  \"companies\": [\n    {\n      \"company_id\": \"{{company_id}}\",\n      \"is_default\": true,\n      \"erp_user_id\": \"{{erp_user_id}}\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/operator/user",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "operator",
+                "user"
+              ]
+            },
+            "description": "Generic operator user management (ModelViewSet), as an alternative to request 3 above. Requires JWT + operator_manage_user permission.\n\n`companies` accepts multiple entries in one call — one User can get a UserCompanyProfile in several companies at once. `erp_user_id` is optional per entry: set it only for companies that have an active WingDigital integration; validate_companies() rejects the request up front (400) if erp_user_id is given for a company with no active IntegrationPartner.\n\n`roles` was omitted here — CompanyInputSerializer auto-fills the default admin-recruiter role when not provided.\n\n`password` must be encrypted client-side with the same scheme as Login (see EncryptionMixin) before sending — left blank here since Postman can't replicate that encryption; a blank password leaves the account requiring the invite/reset-password flow (OperatorSendInviteView) before first login.\n\nOn success, writes IntegrationUserMapping the same way request 3 does, via the new _link_erp_user() helper in AdminUserSerializer."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.id) { pm.collectionVariables.set('admin_user_id', json.id); }"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "5. Update Admin User — Add/Change WingDigital Link",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{recruiter_email}}\",\n  \"email\": \"{{recruiter_email}}\",\n  \"first_name\": \"Sokha\",\n  \"last_name\": \"Chan\",\n  \"is_active\": true,\n  \"companies\": [\n    {\n      \"company_id\": \"{{company_id}}\",\n      \"is_default\": true,\n      \"erp_user_id\": \"{{erp_user_id}}\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/operator/user/{{admin_user_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "operator",
+                "user",
+                "{{admin_user_id}}"
+              ]
+            },
+            "description": "Re-runs the same company-assignment loop as create, so it can also be used to attach or repoint a WingDigital erp_user_id on an existing admin user — e.g. when they're added to a second, newly-integrated company. update_or_create() on IntegrationUserMapping means calling this again with a different erp_user_id re-points the mapping instead of duplicating it."
+          },
+          "response": []
+        }
+      ]
+    },
     {
       "name": "Operator (Admin) — Company Management",
       "description": "Admin operator manages companies. Integration tab fields are included automatically.\nAll endpoints require JWT + operator_manage_company permission.",
       "item": [
-
         {
           "name": "List Companies",
           "request": {
@@ -484,19 +995,46 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/operator/companies",
-              "host": ["{{base_url}}"], "path": ["api", "operator", "companies"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "operator",
+                "companies"
+              ],
               "query": [
-                { "key": "search",       "value": "",      "disabled": true },
-                { "key": "is_active",    "value": "true",  "disabled": true },
-                { "key": "is_integrate", "value": "true",  "disabled": true, "description": "Filter integrated companies only" },
-                { "key": "page",         "value": "1",     "disabled": true },
-                { "key": "page_size",    "value": "10",    "disabled": true }
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "is_active",
+                  "value": "true",
+                  "disabled": true
+                },
+                {
+                  "key": "is_integrate",
+                  "value": "true",
+                  "disabled": true,
+                  "description": "Filter integrated companies only"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "page_size",
+                  "value": "10",
+                  "disabled": true
+                }
               ]
             },
             "description": "Includes integrate_domain and is_integrate in each row."
           }
         },
-
         {
           "name": "Get Company Detail (with Integration tab)",
           "request": {
@@ -504,12 +1042,19 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/operator/companies/{{company_id}}",
-              "host": ["{{base_url}}"], "path": ["api", "operator", "companies", "{{company_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "operator",
+                "companies",
+                "{{company_id}}"
+              ]
             },
             "description": "Returns full company detail including:\n  integrate_domain, is_integrate\n  integration: null | { is_connected, partner_tenant_id, status, connected_at }\n  employees: [...]\n\nintegration is null when no integrate_domain is set."
           }
         },
-
         {
           "name": "Create Company (General Info only — no integration)",
           "request": {
@@ -518,11 +1063,22 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Wing Career\",\n  \"email\": \"wingcareer@example.com\",\n  \"phone_number\": \"+85512345678\",\n  \"address\": \"44 Sotheareos Blvd, Phnom Penh\",\n  \"industry\": \"Technology\",\n  \"company_size\": \"100-500\",\n  \"about_me\": \"Leading tech company in Cambodia.\",\n  \"website\": \"https://wingcareer.com\",\n  \"is_active\": true,\n  \"access_type\": \"internal\",\n  \"is_agree_policy\": true\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{base_url}}/api/operator/companies",
-              "host": ["{{base_url}}"], "path": ["api", "operator", "companies"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "operator",
+                "companies"
+              ]
             },
             "description": "Creates a normal company without integration.\nintegrate_domain is omitted → integration tab returns null."
           },
@@ -539,7 +1095,6 @@
             }
           ]
         },
-
         {
           "name": "Create Company (with Integration domain)",
           "request": {
@@ -548,11 +1103,22 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Wing Career\",\n  \"email\": \"wingcareer@example.com\",\n  \"phone_number\": \"+85512345678\",\n  \"address\": \"44 Sotheareos Blvd, Phnom Penh\",\n  \"industry\": \"Technology\",\n  \"company_size\": \"100-500\",\n  \"about_me\": \"Leading tech company in Cambodia.\",\n  \"website\": \"https://wingcareer.com\",\n  \"is_active\": true,\n  \"access_type\": \"internal\",\n  \"is_agree_policy\": true,\n  \"integrate_domain\": \"https://wingdigital.com\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{base_url}}/api/operator/companies",
-              "host": ["{{base_url}}"], "path": ["api", "operator", "companies"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "operator",
+                "companies"
+              ]
             },
             "description": "Creates a company with integrate_domain set.\nOn GET detail, integration block returns { is_connected: false, ... } until handshake completes."
           },
@@ -569,7 +1135,6 @@
             }
           ]
         },
-
         {
           "name": "Update Company — set Integration Domain",
           "request": {
@@ -578,16 +1143,27 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"integrate_domain\": \"https://wingdigital.com\"\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{base_url}}/api/operator/companies/{{company_id}}",
-              "host": ["{{base_url}}"], "path": ["api", "operator", "companies", "{{company_id}}"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "operator",
+                "companies",
+                "{{company_id}}"
+              ]
             },
             "description": "Operator sets the ERP domain on an existing company to enable the Integration tab."
           }
         },
-
         {
           "name": "Register Company from ERP",
           "request": {
@@ -596,16 +1172,28 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Wing Career Co., Ltd.\",\n  \"email\": \"hr@wingcareer.com\",\n  \"phone_number\": \"+85523456789\",\n  \"address\": \"No. 123 Street 271, Phnom Penh\",\n  \"industry\": \"Fintech\",\n  \"company_size\": \"500-1000\",\n  \"website\": \"https://wingcareer.com\",\n  \"integrate_domain\": \"https://wingdigital.com\",\n  \"country\": 1,\n  \"city\": 10,\n  \"latitude\": 11.562108,\n  \"longitude\": 104.888535\n}",
-              "options": { "raw": { "language": "json" } }
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{base_url}}/api/v1/integration/companies/register",
-              "host": ["{{base_url}}"], "path": ["api", "v1", "integration", "companies", "register"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "integration",
+                "companies",
+                "register"
+              ]
             },
             "description": "Called by ERP to register its company profile into ConnectJob.\nIdempotent on integrate_domain — re-submitting syncs the existing record.\nSets is_integrate=True, access_type=EXTERNAL, entry_type=INTEGRATION."
           }
         },
-
         {
           "name": "Lookup Company by Domain",
           "request": {
@@ -613,15 +1201,27 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/integration/companies/lookup?domain=https://wingdigital.com",
-              "host": ["{{base_url}}"], "path": ["api", "v1", "integration", "companies", "lookup"],
-              "query": [{ "key": "domain", "value": "https://wingdigital.com" }]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "integration",
+                "companies",
+                "lookup"
+              ],
+              "query": [
+                {
+                  "key": "domain",
+                  "value": "https://wingdigital.com"
+                }
+              ]
             },
             "description": "Returns the ConnectJob company record for a given ERP domain."
           }
         }
-
       ]
     }
-
   ]
 }

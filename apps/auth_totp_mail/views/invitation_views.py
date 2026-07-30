@@ -218,8 +218,12 @@ class ApplicantUpcomingEventsView(
         "job_application__job_post__title",
         "job_application__job_post__company__name",
     ]
+    lookup_value_regex = r"\d+"
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return Invitation.objects.none()
+
         user_company_profile_id = getattr(self.request, "user_company_profile_id", None)
         ucp = UserCompanyProfileService.get_by_id(user_company_profile_id)
 

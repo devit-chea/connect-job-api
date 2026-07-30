@@ -68,8 +68,9 @@ class GlobalSearchAPIView(APIView):
 
         # --- Companies ---
         company_search = search_service.search_companies()
-        total_companies = company_search.count()
-        company_results = company_search[: self.PAGE_LIMIT].execute()
+        company_response = company_search[: self.PAGE_LIMIT].execute()
+        total_companies = company_response.hits.total.value
+        company_results = company_response
 
         # --- Jobs ---
         job_results = []
@@ -104,8 +105,9 @@ class GlobalSearchAPIView(APIView):
 
         # --- People (Profiles) ---
         people_search = search_service.search_people_profiles()
-        total_people = people_search.count()
-        people_results = people_search[: self.PAGE_LIMIT].execute()
+        people_response = people_search[: self.PAGE_LIMIT].execute()
+        total_people = people_response.hits.total.value
+        people_results = people_response
         company_map = {}
         profile_ids = [hit.meta.id for hit in people_results]
         if profile_ids:

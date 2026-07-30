@@ -69,3 +69,5 @@ Thumbs.db
 admin
 staticfiles
 rest_framework
+
+compose_local

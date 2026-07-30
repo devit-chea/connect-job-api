@@ -42,6 +42,8 @@ from apps.base.serializers.company_serializer import (
 from apps.base.utils.base_util import get_default_company
 from apps.base.utils.file_management_util import FileURLService
 from apps.core.exceptions.base_exceptions import BadRequestException
+from apps.integration.constants import ConnectorStatus
+from apps.integration.models.job_platform import IntegrationPartner, IntegrationUserMapping
 
 
 encryption = EncryptionMixin()
@@ -393,6 +395,15 @@ class CompanyInputSerializer(serializers.Serializer):
     roles = serializers.ListField(
         child=serializers.IntegerField(min_value=1), required=False, allow_empty=True
     )
+    erp_user_id = serializers.CharField(
+        max_length=255,
+        required=False,
+        allow_null=True,
+        allow_blank=True,
+        help_text="ERP's own user ID for this company, when this company has an "
+                   "active WingDigital integration. Links this UserCompanyProfile "
+                   "to that ERP identity via IntegrationUserMapping.",
+    )
 
     def to_internal_value(self, data):
         data = dict(data)
@@ -409,6 +420,31 @@ class CompanyInputSerializer(serializers.Serializer):
             data["roles"] = [default_id]
 
         return super().to_internal_value(data)
+
+
+def _link_erp_user(user_company_profile, company_id, erp_user_id):
+    """
+    Links a UserCompanyProfile to a WingDigital ERP user, mirroring what
+    OperatorIntegrationRecruiterView does when an operator picks an ERP user
+    directly. validate_companies() already confirmed an active
+    IntegrationPartner exists for company_id, so this only re-fetches it and
+    writes the mapping.
+    """
+    partner = IntegrationPartner.objects.filter(
+        organization_id=str(company_id),
+        status=ConnectorStatus.ACTIVE,
+    ).first()
+    if not partner:
+        return
+
+    IntegrationUserMapping.objects.update_or_create(
+        connection=partner,
+        local_user_id=str(user_company_profile.profile_id),
+        defaults={
+            "partner_user_id": str(erp_user_id),
+            "user_company_profile": user_company_profile,
+        },
+    )
 
 
 class AdminUserSerializer(WritableNestedModelSerializer, BaseSerializer):
@@ -459,6 +495,23 @@ class AdminUserSerializer(WritableNestedModelSerializer, BaseSerializer):
         )
         if conflicts:
             raise serializers.ValidationError("A company already have ADMIN RECRUITER.")
+
+        erp_company_ids = {
+            item["company_id"] for item in companies if item.get("erp_user_id")
+        }
+        if erp_company_ids:
+            connected_ids = set(
+                IntegrationPartner.objects.filter(
+                    organization_id__in=[str(cid) for cid in erp_company_ids],
+                    status=ConnectorStatus.ACTIVE,
+                ).values_list("organization_id", flat=True)
+            )
+            unconnected = {cid for cid in erp_company_ids if str(cid) not in connected_ids}
+            if unconnected:
+                raise serializers.ValidationError(
+                    f"erp_user_id was provided for company_id(s) {sorted(unconnected)} "
+                    "but they have no active WingDigital integration."
+                )
         return companies
 
     def get_types(self, instance):
@@ -517,6 +570,7 @@ class AdminUserSerializer(WritableNestedModelSerializer, BaseSerializer):
             company_id = company_data.get("company_id")
             is_default = company_data.get("is_default", False)
             roles = company_data.get("roles", [])
+            erp_user_id = company_data.get("erp_user_id")
 
             user_company_payload = {
                 "user": instance.pk,
@@ -529,6 +583,9 @@ class AdminUserSerializer(WritableNestedModelSerializer, BaseSerializer):
             user_company_profile = operator_serializer.save()
             if is_default:
                 default_company_profile = user_company_profile
+
+            if erp_user_id:
+                _link_erp_user(user_company_profile, company_id, erp_user_id)
 
         if default_company_profile:
             instance.default_user_profile_company = default_company_profile.pk
@@ -569,6 +626,7 @@ class AdminUserSerializer(WritableNestedModelSerializer, BaseSerializer):
                 company_id = company_data.get("company_id")
                 is_default = company_data.get("is_default", False)
                 roles = company_data.get("roles", [])
+                erp_user_id = company_data.get("erp_user_id")
 
                 user_company_payload = {
                     "user": instance.pk,
@@ -586,6 +644,9 @@ class AdminUserSerializer(WritableNestedModelSerializer, BaseSerializer):
 
                 if is_default:
                     default_ucp = ucp
+
+                if erp_user_id:
+                    _link_erp_user(ucp, company_id, erp_user_id)
 
         if default_ucp:
             instance.default_user_profile_company = default_ucp.pk

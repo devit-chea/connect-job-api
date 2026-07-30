@@ -51,3 +51,7 @@ class JobPostUserStateModel(models.Model):
     class Meta:
         db_table = "job_post_user_state"
         description = "Job Post User State"
+        indexes = [
+            models.Index(fields=["job_post_id", "status"],   name="jpus_post_status_idx"),
+            models.Index(fields=["user_company_profile_id"], name="jpus_ucp_idx"),
+        ]

@@ -57,11 +57,17 @@ def flush_redis_counters_to_db():
     RedisFlushService().handle_flush()
 
 
+_DIRTY_FLUSH_CHUNK_SIZE = 500
+
+
 @shared_task(name="activity_tracking.flush_dirty_job_post_ids")
 def flush_dirty_job_post_ids():
     dirty_ids = DirtyRedisSyncService.pop_dirty_job_post_ids()
-    if dirty_ids:
-        bulk_update_job_post_activity_counts_to_es.delay(dirty_ids)
+    if not dirty_ids:
+        return
+    for i in range(0, len(dirty_ids), _DIRTY_FLUSH_CHUNK_SIZE):
+        chunk = dirty_ids[i:i + _DIRTY_FLUSH_CHUNK_SIZE]
+        bulk_update_job_post_activity_counts_to_es.delay(chunk)
 
 
 @shared_task(

@@ -341,10 +341,16 @@ class JobPostSerializer(BaseAndAuditSerializer, BaseValidationSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
 
-        # Group and serialize additional fields by field_name
-        grouped_fields = JobPostAdditionalFieldModel.objects.filter(
-            job_post=instance, is_deleted=False
-        ).values("code", "name", "description", "field_name")
+        # Use prefetched additional fields when available (list views), else hit DB (detail views)
+        prefetched = getattr(instance, "prefetched_additional_fields", None)
+        if prefetched is not None:
+            grouped_fields = prefetched
+        else:
+            grouped_fields = list(
+                JobPostAdditionalFieldModel.objects.filter(
+                    job_post=instance, is_deleted=False
+                ).values("code", "name", "description", "field_name")
+            )
 
         mapping = {
             "job_levels": [],
@@ -352,22 +358,25 @@ class JobPostSerializer(BaseAndAuditSerializer, BaseValidationSerializer):
         }
 
         for item in grouped_fields:
-            field_name = item["field_name"]
+            field_name = item["field_name"] if isinstance(item, dict) else item.field_name
+            code = item["code"] if isinstance(item, dict) else item.code
+            name = item["name"] if isinstance(item, dict) else item.name
+            description = item["description"] if isinstance(item, dict) else item.description
             if field_name in mapping:
-                mapping[field_name].append(
-                    {
-                        "code": item["code"],
-                        "name": item["name"],
-                        "description": item["description"],
-                    }
-                )
+                mapping[field_name].append({"code": code, "name": name, "description": description})
 
         data.update(mapping)
-        assignments = (
-            instance.job_post_assigned_recruiters
-            .filter(is_deleted=False)
-            .select_related("assigned_ucp__profile")
-        )
+
+        # Use prefetched assigned recruiters when available (list views), else hit DB (detail views)
+        prefetched_recruiters = getattr(instance, "prefetched_recruiters", None)
+        if prefetched_recruiters is not None:
+            assignments = prefetched_recruiters
+        else:
+            assignments = (
+                instance.job_post_assigned_recruiters
+                .filter(is_deleted=False)
+                .select_related("assigned_ucp__profile")
+            )
         data["assigned_recruiters"] = AssignedRecruiterInfoSerializer(
             assignments, many=True, context=self.context
         ).data
@@ -573,9 +582,13 @@ class JobPostListSerializer(BaseReadOnlyFieldsSerializer):
         read_only_fields = fields
 
     def get_assigned_recruiters(self, obj):
-        assignments = obj.job_post_assigned_recruiters.filter(
-            is_deleted=False
-        ).select_related("assigned_ucp__profile")
+        prefetched = getattr(obj, "prefetched_recruiters", None)
+        if prefetched is not None:
+            assignments = prefetched
+        else:
+            assignments = obj.job_post_assigned_recruiters.filter(
+                is_deleted=False
+            ).select_related("assigned_ucp__profile")
         return AssignedRecruiterInfoSerializer(assignments, many=True, context=self.context).data
 
 
@@ -808,6 +821,13 @@ class JobPostDetailSerializer(BaseReadOnlyFieldsSerializer):
         if "category_icon_map" in self.context:
             return self.context["category_icon_map"]
 
+        from django.core.cache import cache
+        CACHE_KEY = "job_category_icon_map"
+        cached = cache.get(CACHE_KEY)
+        if cached is not None:
+            self.context["category_icon_map"] = cached
+            return cached
+
         unique_names = {name for name in category_names if name}
 
         categories = JobCategoryModel.objects.filter(
@@ -824,6 +844,7 @@ class JobPostDetailSerializer(BaseReadOnlyFieldsSerializer):
                 presentation.get("profile_image") or {}
             ).get("file_path")
 
+        cache.set(CACHE_KEY, icon_map, timeout=3600)
         self.context["category_icon_map"] = icon_map
         return icon_map
 

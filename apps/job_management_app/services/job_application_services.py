@@ -209,6 +209,7 @@ class JobApplicationServices:
         status: JobPipelineStatusConfigModel,
         actor,
         actor_profile_id,
+        skip_erp_sync: bool = False,
     ) -> JobApplicationModel:
         """
         Updates pipeline step/status for a given application (under a job_post),
@@ -338,8 +339,11 @@ class JobApplicationServices:
 
         # Sync pipeline movement to the connected ERP after the transaction commits.
         # Uses on_commit so the task is never queued for a rolled-back transaction.
-        _app_id = app.id
-        transaction.on_commit(lambda: _dispatch_pipeline_sync(_app_id))
+        # skip_erp_sync=True when the update originates FROM the ERP (inbound) to
+        # prevent an infinite sync loop.
+        if not skip_erp_sync:
+            _app_id = app.id
+            transaction.on_commit(lambda: _dispatch_pipeline_sync(_app_id))
 
         return app
 

@@ -41,9 +41,9 @@ class ApplicantSyncService:
         payload = ApplicantSyncService._build_payload(application, partner)
 
         try:
+            erp_base = (partner.erp_domain or settings.CONNECTOR_INTEGRATION_URL).rstrip("/")
             response = http_client.post(
-                f"{settings.CONNECTOR_INTEGRATION_URL}"
-                f"/api/connector-integration/applicants",
+                f"{erp_base}/api/connector-integration/applicants",
                 json=payload,
                 headers={"X-CONNECTOR-KEY": partner.partner_inbound_key},
                 timeout=15,

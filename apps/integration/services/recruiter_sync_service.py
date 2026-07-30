@@ -47,15 +47,18 @@ class RecruiterSyncService:
         mapping, _ = IntegrationUserMapping.objects.get_or_create(
             connection=partner,
             local_user_id=local_user_id,
-            defaults={"partner_user_id": None},
+            defaults={"partner_user_id": None, "user_company_profile": ucp},
         )
+        if mapping.user_company_profile_id != ucp.id:
+            mapping.user_company_profile = ucp
+            mapping.save(update_fields=["user_company_profile"])
 
         payload = RecruiterSyncService._build_payload(ucp, partner)
 
         try:
+            erp_base = (partner.erp_domain or settings.CONNECTOR_INTEGRATION_URL).rstrip("/")
             response = http_client.post(
-                f"{settings.CONNECTOR_INTEGRATION_URL}"
-                f"/api/connector-integration/users",
+                f"{erp_base}/api/connector-integration/users",
                 json=payload,
                 headers={"X-CONNECTOR-KEY": partner.partner_inbound_key},
                 timeout=15,

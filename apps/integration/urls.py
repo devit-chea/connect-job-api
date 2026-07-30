@@ -20,6 +20,14 @@ from apps.integration.views.data_mapping_view import (
     ValueMappingDetailView,
 )
 from apps.integration.views.inbound_job_post_view import IntegrationJobPostView
+from apps.integration.views.operator_connect_view import OperatorConnectView
+from apps.integration.views.operator_recruiter_view import OperatorIntegrationRecruiterView
+from apps.integration.views.inbound_pipeline_view import InboundPipelineUpdateView
+from apps.integration.views.sync_log_view import (
+    IntegrationSyncLogListView,
+    IntegrationSyncLogDetailView,
+    IntegrationSyncLogRetryView,
+)
 
 router = DefaultRouter(trailing_slash=False)
 
@@ -49,6 +57,40 @@ urlpatterns = [
                     "jobs/publish",
                     IntegrationJobPostView.as_view(),
                     name="integration-jobs-publish",
+                ),
+                # Operator-initiated connection
+                path(
+                    "operator/connect",
+                    OperatorConnectView.as_view(),
+                    name="integration-operator-connect",
+                ),
+                # Operator creates admin recruiter from ERP user
+                path(
+                    "operator/companies/<int:company_id>/recruiter",
+                    OperatorIntegrationRecruiterView.as_view(),
+                    name="integration-operator-recruiter",
+                ),
+                # ERP → ConnectJob inbound pipeline update
+                path(
+                    "applications/<str:application_id>/pipeline",
+                    InboundPipelineUpdateView.as_view(),
+                    name="integration-inbound-pipeline",
+                ),
+                # Sync failure log — review and retry
+                path(
+                    "sync-logs",
+                    IntegrationSyncLogListView.as_view(),
+                    name="integration-sync-log-list",
+                ),
+                path(
+                    "sync-logs/<uuid:log_id>",
+                    IntegrationSyncLogDetailView.as_view(),
+                    name="integration-sync-log-detail",
+                ),
+                path(
+                    "sync-logs/<uuid:log_id>/retry",
+                    IntegrationSyncLogRetryView.as_view(),
+                    name="integration-sync-log-retry",
                 ),
                 # Data Mapping endpoints
                 path(
