@@ -175,6 +175,10 @@ def validate_user(sender, instance, **kwargs):
         Q(~Q(state=UserState.PENDING_VERIFY_OPT), status=UserStatus.ACTIVE)
         | Q(state=UserState.PENDING_VERIFY_OPT, is_required_reset_pwd=True,status=UserStatus.ACTIVE)
     )
+    if instance.id:
+        # Updating an existing user: exclude itself, or this always "conflicts"
+        # with its own username/email on every save (e.g. every profile edit).
+        user_query = user_query.exclude(pk=instance.id)
     existed_user = user_query.filter(username=instance.username).exists()
     existed_email = user_query.filter(email=instance.email).exists()
     existed_user_msg = "Unable to create the account."

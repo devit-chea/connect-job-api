@@ -158,6 +158,7 @@ def get_role_payload(name, code, _type, description, permissions, perm_type="all
         "code": code,
         "type": _type,
         "active": True,
+        "is_default": True,
         "description": description,
         "role_permissions": [
             {"permission": p.pk, "perm_type": perm_type} for p in permissions

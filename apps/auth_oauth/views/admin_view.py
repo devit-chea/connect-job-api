@@ -258,7 +258,10 @@ class OperatorRoleListView(PermissionMixin, BaseListAPIView):
     def list(self, request, *args, **kwargs):
         company = kwargs.get("company", None)
         _type = kwargs.get("type", None)
-        queryset = Role.objects.filter(company=company, type=_type)
+        # Seeded default roles live on the platform's DEFAULT company with
+        # is_public=True, not on each tenant company — a plain company filter
+        # alone matches nothing for a real company.
+        queryset = Role.objects.filter(Q(company=company) | Q(is_public=True), type=_type)
         queryset = self.filter_queryset(queryset)
 
         page = self.paginate_queryset(queryset)

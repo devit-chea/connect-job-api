@@ -12,6 +12,7 @@ from apps.auth_oauth.models.role_model import Role
 from apps.auth_oauth.models.user_company_profile import UserCompanyProfile
 from apps.base.mixins.permission_mixin import PermissionMixin
 from apps.base.views.base_views import BaseModelViewSet
+from apps.recruiter_management.selectors.role_selector import get_allowed_recruiter_roles
 from apps.recruiter_management.serializers.recruiter_management_serializer import (
     RecruiterAdminCreateUserSerializer,
     AdminRecruiterRoleSerializer,
@@ -73,8 +74,8 @@ class RecruiterAdminRolesView(PermissionMixin, BaseModelViewSet):
     ordering_fields = ["name", "create_date", "write_date"]
 
     def get_queryset(self):
-        company_id = getattr(self.request, "company_id", None)
-        qs = super().get_queryset()
-        if company_id:
-            return qs.filter(company_id=company_id, active=True)
-        return Role.objects.none()
+        request = self.request
+        return get_allowed_recruiter_roles(
+            company_id=getattr(request, "company_id", None),
+            user_company_profile_id=getattr(request, "user_company_profile_id", None),
+        )

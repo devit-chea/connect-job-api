@@ -33,6 +33,7 @@ from apps.base.serializers.base_serializer import (
     BaseAndAuditSerializer,
 )
 from apps.base.utils.file_management_util import FileURLService
+from apps.recruiter_management.selectors.role_selector import get_allowed_recruiter_roles
 
 encryption = EncryptionMixin()
 
@@ -129,21 +130,18 @@ class RecruiterAdminCreateUserSerializer(WritableNestedModelSerializer, BaseSeri
         if not company_id:
             raise ValidationError("company not found")
 
+        allowed_qs = get_allowed_recruiter_roles(
+            company_id=company_id,
+            user_company_profile_id=getattr(request, "user_company_profile_id", None),
+        )
+
         role_ids = list(set(attrs.get("roles") or []))
         if role_ids:
-            found = set(
-                Role.objects.filter(pk__in=role_ids, company_id=company_id).values_list(
-                    "id", flat=True
-                )
-            )
+            found = set(allowed_qs.filter(pk__in=role_ids).values_list("id", flat=True))
             if len(found) != len(role_ids):
                 raise ValidationError({"roles": "Role(s) not found for your company"})
         else:
-            default_id = (
-                Role.objects.filter(code=DefaultRole.RECRUITER_ROLE)
-                .values_list("id", flat=True)
-                .first()
-            )
+            default_id = allowed_qs.values_list("id", flat=True).first()
             if not default_id:
                 raise ValidationError(
                     {"roles": "Default recruiter role is not configured"}

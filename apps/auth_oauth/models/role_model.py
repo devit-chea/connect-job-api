@@ -23,5 +23,18 @@ class Role(AbstractBaseModel):
     description = models.TextField(blank=True, null=True)
     is_public = models.BooleanField(default=False)
     is_default = models.BooleanField(default=False,db_comment="ucp default assignment roles ")
+    custom_for_ucp = models.ForeignKey(
+        "auth_oauth.UserCompanyProfile",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="custom_roles",
+        db_comment=(
+            "If set, this Role is a customization scoped exclusively to this "
+            "one admin_recruiter's UserCompanyProfile — used only when THEY "
+            "create recruiter-type users for their company."
+        ),
+    )
+
     class Meta:
         db_table = "roles"

@@ -58,6 +58,7 @@ class DefaultRoleSerializer(WritableNestedModelSerializer, BaseSerializer):
             "own_only",
             "is_public",
             "role_permissions",
+            "is_default",
         ]
         extra_kwargs = {
             "id": {"read_only": True},

@@ -259,6 +259,19 @@ class OperatorRolePermissionSerializer(BaseSerializer):
         model = RolePermission
         fields = ["id", "permission", "perm_type"]
 
+class CustomForUCPLookupSerializer(serializers.ModelSerializer):
+    user_full_name = serializers.SerializerMethodField()
+    company_name = serializers.CharField(source="company.name", read_only=True)
+
+    class Meta:
+        model = UserCompanyProfile
+        fields = ["id", "user_full_name", "company_name", "type"]
+
+    def get_user_full_name(self, obj):
+        user = getattr(obj, "user", None)
+        return user.get_full_name() if user else None
+
+
 class RoleSerializer(WritableNestedModelSerializer, BaseSerializer):
     type = serializers.ChoiceField(choices=UserTypes.choices)
     role_permissions = OperatorRolePermissionSerializer(many=True, required=False)
@@ -271,6 +284,18 @@ class RoleSerializer(WritableNestedModelSerializer, BaseSerializer):
     )
     name = serializers.CharField(required=True, allow_null=False)
     is_public = serializers.BooleanField(default=True, required=False, allow_null=True)
+    custom_for_ucp = CustomForUCPLookupSerializer(read_only=True)  # READ
+    custom_for_ucp_id = serializers.PrimaryKeyRelatedField(  # WRITE
+        source="custom_for_ucp",
+        queryset=UserCompanyProfile.objects.filter(
+            type=UserTypes.ADMIN_RECRUITER.value, status=ProfileStatus.ACTIVE,
+        ),
+        required=False,
+        allow_null=True,
+        write_only=True,
+        help_text="Scope this role as a customization for one specific admin "
+                  "recruiter's UserCompanyProfile. Must be type=recruiter.",
+    )
 
     class Meta:
         model = Role
@@ -287,6 +312,8 @@ class RoleSerializer(WritableNestedModelSerializer, BaseSerializer):
             "is_public",
             "role_permissions",
             "is_default",
+            "custom_for_ucp",
+            "custom_for_ucp_id",
         ]
         extra_kwargs = {
             "id": {"read_only": True},
@@ -298,6 +325,15 @@ class RoleSerializer(WritableNestedModelSerializer, BaseSerializer):
         data["company"] = default_company.id if default_company else None
 
         return super().to_internal_value(data)
+
+    def validate(self, attrs):
+        custom_for_ucp = attrs.get("custom_for_ucp", getattr(self.instance, "custom_for_ucp", None))
+        role_type = attrs.get("type", getattr(self.instance, "type", None))
+        if custom_for_ucp and role_type != UserTypes.RECRUITER.value:
+            raise serializers.ValidationError({
+                "custom_for_ucp_id": "Only recruiter-type roles can be customized for an admin recruiter.",
+            })
+        return super().validate(attrs)
 
 
 class OperatorRequestDetailSerializer(serializers.ModelSerializer):
