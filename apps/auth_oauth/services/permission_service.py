@@ -1,7 +1,11 @@
 from apps.auth_oauth.utils.auth_util import get_user_agent_info
 from apps.auth_oauth.models.permission_model import Permission
 from apps.core.exceptions.base_exceptions import PermissionDeniedException
-from apps.auth_oauth.constants.auth_constants import PermissionOptions, ProfileStatus
+from apps.auth_oauth.constants.auth_constants import (
+    PermissionOptions,
+    ProfileStatus,
+    RecordScope,
+)
 from apps.auth_oauth.serializers.auth_serializer import PermissionSerializer
 from config.settings.base import AUTH_PERMISSION_CACHE_ENABLED
 from apps.auth_oauth.utils.redis_cache import (
@@ -165,3 +169,39 @@ class PermissionService:
             raise PermissionDeniedException(
                 f"Permission {codename} not found. Access denied by default."
             )
+
+    @staticmethod
+    def get_record_scope(permissions, codename, default=RecordScope.OWN):
+        """
+        Resolves which rows `codename` grants access to, from the same
+        serialized permission tree used by check_permission(). Most
+        permissive wins when multiple roles grant different scopes for the
+        same permission (ALL > SHARED > OWN), mirroring check_permission's
+        priority handling. Falls back to `default` (OWN, the safest option)
+        when the codename isn't found or carries no explicit scope.
+        """
+        if permissions is None or codename is None:
+            return default
+
+        codenames = codename if isinstance(codename, list) else [codename]
+        priority_order = {
+            RecordScope.ALL: 0,
+            RecordScope.SHARED: 1,
+            RecordScope.OWN: 2,
+        }
+        scopes_found = set()
+
+        def search(perms):
+            for perm in perms:
+                if not perm:
+                    continue
+                if perm.get("codename") in codenames and perm.get("record_scope") in priority_order:
+                    scopes_found.add(perm["record_scope"])
+
+                children = perm.get("children")
+                if children:
+                    search(children)
+
+        search(permissions)
+
+        return sorted(scopes_found, key=priority_order.get)[0] if scopes_found else default

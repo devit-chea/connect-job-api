@@ -1,3 +1,6 @@
+import logging
+
+from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.core.exceptions import ValidationError
 from django.db import transaction
@@ -14,6 +17,7 @@ from apps.auth_oauth.constants.auth_constants import (
     ProfileCode,
     UserState,
     UserTypes,
+    RecordScope,
 )
 from apps.auth_oauth.mixins.encryption_mixins import EncryptionMixin
 from apps.auth_oauth.models.auth_models import User
@@ -32,6 +36,7 @@ from apps.auth_oauth.services.user_company_profile_service import (
 )
 from apps.auth_oauth.services.user_profile_service import UserProfileService
 from apps.auth_oauth.services.user_service import UserService
+from apps.auth_oauth.utils.redis_cache import get_permission_cache_key, delete_cached_key
 from apps.base.constants.base_constants import Status
 from apps.base.models.company_model import Company
 from apps.base.serializers.base_serializer import BaseSerializer, BaseCompanySerializer, BaseAndAuditSerializer
@@ -47,6 +52,7 @@ from apps.integration.models.job_platform import IntegrationPartner, Integration
 
 
 encryption = EncryptionMixin()
+logger = logging.getLogger(__name__)
 
 
 STATUS_CHOICES = [("approved", "Approved"), ("rejected", "Reject")]
@@ -253,11 +259,12 @@ class RolePermissionSerializer(BaseSerializer):
 
 class OperatorRolePermissionSerializer(BaseSerializer):
     perm_type = serializers.ChoiceField(required=True, choices=PermissionOptions)
+    record_scope = serializers.ChoiceField(required=False, default=RecordScope.OWN, choices=RecordScope)
     permission = serializers.PrimaryKeyRelatedField(queryset=Permission.objects.all())
 
     class Meta:
         model = RolePermission
-        fields = ["id", "permission", "perm_type"]
+        fields = ["id", "permission", "perm_type", "record_scope"]
 
 class CustomForUCPLookupSerializer(serializers.ModelSerializer):
     user_full_name = serializers.SerializerMethodField()
@@ -334,6 +341,30 @@ class RoleSerializer(WritableNestedModelSerializer, BaseSerializer):
                 "custom_for_ucp_id": "Only recruiter-type roles can be customized for an admin recruiter.",
             })
         return super().validate(attrs)
+
+    def update(self, instance, validated_data):
+        role = super().update(instance, validated_data)
+        self._invalidate_permission_cache(role)
+        return role
+
+    @staticmethod
+    def _invalidate_permission_cache(role):
+        # role_permissions (perm_type/record_scope) drive PermissionService's
+        # cached tree — without this, an edited role's changes wouldn't take
+        # effect for any UCP holding it until the cache TTL expires.
+        if not getattr(settings, "AUTH_PERMISSION_CACHE_ENABLED", False):
+            return
+        try:
+            for ucp in UserCompanyProfile.objects.filter(roles=role).only("id", "user_id"):
+                if not ucp.user_id:
+                    continue
+                cache_key = get_permission_cache_key(
+                    user_id=ucp.user_id, user_company_profile_id=ucp.id
+                )
+                if cache_key:
+                    delete_cached_key(cache_key)
+        except Exception as e:
+            logger.error(f"Error clearing permission cache for role {role.id}: {e}")
 
 
 class OperatorRequestDetailSerializer(serializers.ModelSerializer):

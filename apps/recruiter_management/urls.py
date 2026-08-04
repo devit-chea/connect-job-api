@@ -13,6 +13,7 @@ from apps.recruiter_management.views.recruiter_company_view import (
 from apps.recruiter_management.views.recruiter_management_view import (
     RecruiterAdminCreateRecruiterView,
     RecruiterAdminRolesView,
+    RecruiterAdminUserShareView,
 )
 from apps.recruiter_management.views.recruiter_schedule_view import (
     InvitationScheduleByApplicationView,
@@ -34,6 +35,11 @@ router.register(
 )
 router.register(
     r"recruiter_admin/roles", RecruiterAdminRolesView, basename="recruiter-admin-roles"
+)
+router.register(
+    r"recruiter_admin/user-shares",
+    RecruiterAdminUserShareView,
+    basename="recruiter-admin-user-shares",
 )
 router.register(
     r"recruiter/companies", RecruiterCompanyView, basename="recruiter-companies"

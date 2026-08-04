@@ -6,5 +6,6 @@ from . import reference_model
 from . import skill_model
 from . import work_experience_model
 from . import user_company_profile
+from . import user_company_profile_share_model
 from . import permission_model
 from . import role_model

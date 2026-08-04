@@ -18,6 +18,7 @@ from apps.auth_oauth.models.auth_models import User
 from apps.auth_oauth.models.profile_model import Profile
 from apps.auth_oauth.models.role_model import Role
 from apps.auth_oauth.models.user_company_profile import UserCompanyProfile
+from apps.auth_oauth.models.user_company_profile_share_model import UserCompanyProfileShareModel
 from apps.auth_oauth.serializers.admin_user_serializer import RolePermissionSerializer
 from apps.auth_oauth.serializers.role_serializer import RoleInfoSerializer
 from apps.auth_oauth.services.send_email_service import EmailService
@@ -196,6 +197,22 @@ class RecruiterAdminCreateUserSerializer(WritableNestedModelSerializer, BaseSeri
         )
         return profile
 
+    def _stamp_ownership(self, ucp):
+        # UserCompanyProfileService.create() -> UserCompanyProfileSerializer
+        # is called with no request context, so create_uid/create_ucp_id are
+        # never set by the normal BaseSerializer.create() path. Without this,
+        # record_scope=OWN filtering (create_ucp_id=<caller>) would match
+        # nothing for every recruiter created through this endpoint.
+        if not ucp:
+            return
+        request = self.context.get("request")
+        if not request:
+            return
+        ucp.create_uid = request.user.id if request.user else None
+        creator_ucp_id = getattr(request, "user_company_profile_id", None)
+        ucp.create_ucp_id = str(creator_ucp_id) if creator_ucp_id else None
+        ucp.save(update_fields=["create_uid", "create_ucp_id"])
+
     @transaction.atomic()
     def create(self, validated_data):
         encrypted_password = validated_data.get("password")
@@ -237,6 +254,7 @@ class RecruiterAdminCreateUserSerializer(WritableNestedModelSerializer, BaseSeri
             "profile": profile.pk,
         }
         user_company_profile_instance = UserCompanyProfileService.create(ucp_payload)
+        self._stamp_ownership(user_company_profile_instance)
         if user_company_profile_instance and hasattr(
             user_company_profile_instance, "roles"
         ):
@@ -292,6 +310,7 @@ class RecruiterAdminCreateUserSerializer(WritableNestedModelSerializer, BaseSeri
                 "profile": profile.pk,
             }
             ucp = UserCompanyProfileService.create(ucp_payload)
+            self._stamp_ownership(ucp)
         else:
             if ucp.profile_id != profile.pk:
                 ucp.profile_id = profile.pk
@@ -423,3 +442,28 @@ class AdminRecruiterRoleSerializer(
             "id": {"read_only": True},
             "name": {"required": True},
         }
+
+
+class UserCompanyProfileShareSerializer(BaseSerializer):
+    class Meta:
+        model = UserCompanyProfileShareModel
+        fields = ["id", "target_ucp", "viewer_ucp", "create_date"]
+        extra_kwargs = {
+            "id": {"read_only": True},
+            "create_date": {"read_only": True},
+        }
+
+    def validate(self, attrs):
+        request = self.context.get("request")
+        company_id = getattr(request, "company_id", None)
+        caller_ucp_id = getattr(request, "user_company_profile_id", None)
+        target_ucp = attrs["target_ucp"]
+        viewer_ucp = attrs["viewer_ucp"]
+
+        if target_ucp.company_id != company_id or viewer_ucp.company_id != company_id:
+            raise ValidationError("Both records must belong to your company.")
+        if str(target_ucp.create_ucp_id) != str(caller_ucp_id):
+            raise ValidationError({"target_ucp": "You can only share records you created."})
+        if viewer_ucp.id == caller_ucp_id or viewer_ucp.id == target_ucp.id:
+            raise ValidationError({"viewer_ucp": "Choose a different colleague to share with."})
+        return attrs

@@ -30,6 +30,7 @@ from apps.auth_oauth.constants.auth_constants import (
     UserTypes,
     ProfileStatus,
     PermissionOptions,
+    RecordScope,
 )
 from apps.auth_oauth.models.auth_models import User
 from apps.auth_oauth.models.permission_model import Permission, RolePermission
@@ -651,6 +652,7 @@ class SwitchProfileSerializer(serializers.Serializer):
 
 class PermissionSerializer(BaseSerializer):
     perm_type = serializers.SerializerMethodField()
+    record_scope = serializers.SerializerMethodField()
     children = serializers.SerializerMethodField()
 
     class Meta:
@@ -663,6 +665,7 @@ class PermissionSerializer(BaseSerializer):
             "parent",
             "group",
             "perm_type",
+            "record_scope",
             "children",
         ]
 
@@ -684,6 +687,25 @@ class PermissionSerializer(BaseSerializer):
         ]
         types.sort(key=lambda t: priority_order.index(t))
         return types[0] if types else None
+
+    def get_record_scope(self, instance):
+        role_permissions = RolePermission.objects.filter(
+            permission=instance, role_id__in=self.context.get("roles", [])
+        )
+
+        if not role_permissions.exists():
+            return None
+
+        priority_order = [
+            RecordScope.ALL,
+            RecordScope.SHARED,
+            RecordScope.OWN,
+        ]
+        scopes = [
+            rp.record_scope for rp in role_permissions if rp.record_scope in priority_order
+        ]
+        scopes.sort(key=lambda s: priority_order.index(s))
+        return scopes[0] if scopes else None
 
     def get_children(self, instance):
         roles = self.context.get("roles", [])

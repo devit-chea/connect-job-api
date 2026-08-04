@@ -83,6 +83,12 @@ class PermissionOptions(models.TextChoices):
     VIEW_ONLY = "view_only", "View Only"
 
 
+class RecordScope(models.TextChoices):
+    OWN = "own", "Own"
+    ALL = "all", "All"
+    SHARED = "shared", "Shared"
+
+
 class DefaultRole:
     OPERATOR_DEFAULT_ROLE = "OPERATOR_DEFAULT_ROLE"
     ADMIN_RECRUITER_ROLE = "ADMIN_RECRUITER_ROLE"

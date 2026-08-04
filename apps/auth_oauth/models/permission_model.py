@@ -1,7 +1,7 @@
 from django.db import models
 from apps.base.models.abstract_base_model import AbstractBaseModel
 from apps.auth_oauth.constants.auth_constants import GroupTypes, PermissionTypes
-from apps.auth_oauth.constants.auth_constants import PermissionOptions
+from apps.auth_oauth.constants.auth_constants import PermissionOptions, RecordScope
 from apps.auth_oauth.models.role_model import Role
 
 
@@ -55,6 +55,14 @@ class RolePermission(AbstractBaseModel):
         blank=True,
         default=PermissionOptions.DENIED,
         choices=PermissionOptions,
+    )
+    record_scope = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+        default=RecordScope.OWN,
+        choices=RecordScope,
+        db_comment="Which rows this role+permission grants access to: own/all/shared.",
     )
 
     class Meta:
